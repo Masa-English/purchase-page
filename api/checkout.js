@@ -19,9 +19,10 @@ function isRateLimited(ip) {
   return entry.count > RATE_LIMIT_MAX;
 }
 
-// 2万〜120万（1万円刻み）のPrice IDマッピング
+// 1万〜120万（1万円刻み）のPrice IDマッピング
 const PRICES = {
-  // 2万〜35万（頭金・分割用）
+  // 1万〜35万（頭金・分割用）
+  10000: 'price_d445ad13c192200d6146aa1a9d',
   20000: 'price_c6a8c5600ec53de9e806954a33',
   30000: 'price_260f2c341cf2ce6b9c2670ac58',
   40000: 'price_1761d3c58c8a06917a679e6f57',
@@ -165,7 +166,7 @@ export default async function handler(req, res) {
 
   const amount = Number(req.body?.amount);
   if (!amount || !PRICES[amount]) {
-    return res.status(400).json({ error: 'Invalid amount. Must be 20000-1200000 in 10000 increments.' });
+    return res.status(400).json({ error: 'Invalid amount. Must be 10000-1200000 in 10000 increments.' });
   }
 
   const priceId = PRICES[amount];

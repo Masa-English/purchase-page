@@ -332,7 +332,7 @@
       var fixedAmount = parseInt(params.get('amount'));
 
       // URLに?amount=がある場合 → 顧客モード（金額固定）
-      if (fixedAmount && fixedAmount >= 20000 && fixedAmount <= 1200000 && fixedAmount % 10000 === 0) {
+      if (fixedAmount && fixedAmount >= 10000 && fixedAmount <= 1200000 && fixedAmount % 10000 === 0) {
         // セレクターを全て非表示にし、該当金額のボタンだけ表示
         var purchaseRow = document.querySelector('.purchase-row');
         if (purchaseRow) {
