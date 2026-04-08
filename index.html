@@ -374,49 +374,14 @@
           });
         }
       } else {
-        // ?amount=なし → セレクター付き（営業マンがプレビュー用に見る場合）
-        document.querySelectorAll('.amount-select').forEach(function(select) {
-          var base = parseInt(select.getAttribute('data-base'));
-          select.innerHTML = '';
-          for (var i = 2; i <= 120; i++) {
-            var opt = document.createElement('option');
-            opt.value = i * 10000;
-            opt.textContent = i + '万円';
-            if (i === base) opt.selected = true;
-            select.appendChild(opt);
-          }
-        });
-
-        document.querySelectorAll('.purchase-btn').forEach(function(btn) {
-          btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            var select = this.parentElement.querySelector('.amount-select');
-            var amount = parseInt(select.value);
-            this.textContent = '処理中...';
-            this.style.pointerEvents = 'none';
-            var self = this;
-            fetch('/api/checkout', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ amount: amount })
-            })
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-              if (data.url) {
-                window.location.href = data.url;
-              } else {
-                alert('決済ページの作成に失敗しました。もう一度お試しください。');
-                self.textContent = '購入する';
-                self.style.pointerEvents = '';
-              }
-            })
-            .catch(function() {
-              alert('通信エラーが発生しました。もう一度お試しください。');
-              self.textContent = '購入する';
-              self.style.pointerEvents = '';
-            });
-          });
-        });
+        // ?amount=なし → 購入ボタンを非表示（営業マンからリンクをもらう必要がある）
+        var purchaseRow = document.querySelector('.purchase-row');
+        if (purchaseRow) {
+          purchaseRow.innerHTML = '<th></th>' +
+            '<td colspan="4" style="text-align:center;padding:1.5em;color:#888;font-size:1.2rem;">' +
+            '※ お支払いはご担当者よりお送りするリンクからお手続きください' +
+            '</td>';
+        }
       }
 
       // 決済完了/キャンセル時のメッセージ表示

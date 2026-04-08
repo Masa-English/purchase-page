@@ -71,6 +71,24 @@
 
   <script>
     (function() {
+      // 簡易認証（セッション内のみ有効）
+      var PASS_HASH = '529f7876cfe158e0307064f15fbd58b8438f5137f1c14f82d40339f9dddd53be';
+      var authed = sessionStorage.getItem('sales-auth');
+      if (!authed) {
+        var pw = prompt('パスワードを入力してください');
+        if (!pw) { document.body.innerHTML = '<p style="text-align:center;padding:3em;">アクセスが拒否されました。</p>'; return; }
+        crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw)).then(function(buf) {
+          var hash = Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+          if (hash === PASS_HASH) {
+            sessionStorage.setItem('sales-auth', '1');
+            location.reload();
+          } else {
+            document.body.innerHTML = '<p style="text-align:center;padding:3em;">パスワードが違います。</p>';
+          }
+        });
+        return;
+      }
+
       var BASE = 'https://purchase-page-six.vercel.app';
       var select = document.getElementById('amount-select');
       var display = document.getElementById('amount-display');
@@ -119,8 +137,18 @@
         list.innerHTML = '';
         history.forEach(function(item) {
           var li = document.createElement('li');
-          var man = item.amount / 10000;
-          li.innerHTML = '<span>' + man + '万円 — ' + item.date + '</span><a href="' + item.url + '" target="_blank">開く</a>';
+          var man = parseInt(item.amount) / 10000;
+          if (isNaN(man) || man < 2 || man > 120) return;
+          var span = document.createElement('span');
+          span.textContent = man + '万円 — ' + (item.date || '');
+          var link = document.createElement('a');
+          try { var parsed = new URL(item.url); } catch(e) { return; }
+          if (parsed.origin !== BASE) return;
+          link.href = parsed.href;
+          link.target = '_blank';
+          link.textContent = '開く';
+          li.appendChild(span);
+          li.appendChild(link);
           list.appendChild(li);
         });
       }
