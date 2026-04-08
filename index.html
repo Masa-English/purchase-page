@@ -327,50 +327,112 @@
   <script src="assets/js/common.js"></script>
   <script src="assets/js/slick.min.js"></script>
   <script>
-    // 金額セレクターに36〜100万の選択肢を生成
-    document.querySelectorAll('.amount-select').forEach(function(select) {
-      var base = parseInt(select.getAttribute('data-base'));
-      select.innerHTML = '';
-      for (var i = 2; i <= 120; i++) {
-        var opt = document.createElement('option');
-        opt.value = i * 10000;
-        opt.textContent = i + '万円';
-        if (i === base) opt.selected = true;
-        select.appendChild(opt);
-      }
-    });
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      var fixedAmount = parseInt(params.get('amount'));
 
-    // 購入ボタン
-    document.querySelectorAll('.purchase-btn').forEach(function(btn) {
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        var select = this.parentElement.querySelector('.amount-select');
-        var amount = parseInt(select.value);
-        this.textContent = '処理中...';
-        this.style.pointerEvents = 'none';
-        var self = this;
-        fetch('/api/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: amount })
-        })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-          if (data.url) {
-            window.location.href = data.url;
-          } else {
-            alert('決済ページの作成に失敗しました。もう一度お試しください。');
-            self.textContent = '購入する';
-            self.style.pointerEvents = '';
+      // URLに?amount=がある場合 → 顧客モード（金額固定）
+      if (fixedAmount && fixedAmount >= 20000 && fixedAmount <= 1200000 && fixedAmount % 10000 === 0) {
+        // セレクターを全て非表示にし、該当金額のボタンだけ表示
+        var purchaseRow = document.querySelector('.purchase-row');
+        if (purchaseRow) {
+          var man = fixedAmount / 10000;
+          purchaseRow.innerHTML = '<th>お支払い金額</th>' +
+            '<td colspan="4" style="text-align:center;padding:2em 1em;">' +
+            '<p style="font-size:2.4rem;font-weight:900;margin-bottom:.8em;">' + man + '万円<span style="font-size:1.2rem;font-weight:400;">（税込）</span></p>' +
+            '<a href="#" class="purchase-btn-fixed" style="display:inline-block;color:#fff;font-size:1.8rem;font-weight:700;letter-spacing:.1em;padding:1.2em 3em;border-radius:.8rem;text-decoration:none;background:#44b5a1;transition:opacity 0.3s,transform 0.2s;">購入する</a>' +
+            '</td>';
+        }
+
+        var fixedBtn = document.querySelector('.purchase-btn-fixed');
+        if (fixedBtn) {
+          fixedBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            this.textContent = '処理中...';
+            this.style.pointerEvents = 'none';
+            var self = this;
+            fetch('/api/checkout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ amount: fixedAmount })
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+              if (data.url) {
+                window.location.href = data.url;
+              } else {
+                alert('決済ページの作成に失敗しました。もう一度お試しください。');
+                self.textContent = '購入する';
+                self.style.pointerEvents = '';
+              }
+            })
+            .catch(function() {
+              alert('通信エラーが発生しました。もう一度お試しください。');
+              self.textContent = '購入する';
+              self.style.pointerEvents = '';
+            });
+          });
+        }
+      } else {
+        // ?amount=なし → セレクター付き（営業マンがプレビュー用に見る場合）
+        document.querySelectorAll('.amount-select').forEach(function(select) {
+          var base = parseInt(select.getAttribute('data-base'));
+          select.innerHTML = '';
+          for (var i = 2; i <= 120; i++) {
+            var opt = document.createElement('option');
+            opt.value = i * 10000;
+            opt.textContent = i + '万円';
+            if (i === base) opt.selected = true;
+            select.appendChild(opt);
           }
-        })
-        .catch(function() {
-          alert('通信エラーが発生しました。もう一度お試しください。');
-          self.textContent = '購入する';
-          self.style.pointerEvents = '';
         });
-      });
-    });
+
+        document.querySelectorAll('.purchase-btn').forEach(function(btn) {
+          btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var select = this.parentElement.querySelector('.amount-select');
+            var amount = parseInt(select.value);
+            this.textContent = '処理中...';
+            this.style.pointerEvents = 'none';
+            var self = this;
+            fetch('/api/checkout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ amount: amount })
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+              if (data.url) {
+                window.location.href = data.url;
+              } else {
+                alert('決済ページの作成に失敗しました。もう一度お試しください。');
+                self.textContent = '購入する';
+                self.style.pointerEvents = '';
+              }
+            })
+            .catch(function() {
+              alert('通信エラーが発生しました。もう一度お試しください。');
+              self.textContent = '購入する';
+              self.style.pointerEvents = '';
+            });
+          });
+        });
+      }
+
+      // 決済完了/キャンセル時のメッセージ表示
+      var result = params.get('result');
+      if (result === 'success') {
+        var msg = document.createElement('div');
+        msg.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:1.5em;background:#44b5a1;color:#fff;text-align:center;font-size:1.6rem;font-weight:700;z-index:9999;';
+        msg.textContent = 'お支払いが完了しました。ありがとうございます。';
+        document.body.prepend(msg);
+      } else if (result === 'cancel') {
+        var msg = document.createElement('div');
+        msg.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:1.5em;background:#f97d7d;color:#fff;text-align:center;font-size:1.6rem;font-weight:700;z-index:9999;';
+        msg.textContent = 'お支払いがキャンセルされました。';
+        document.body.prepend(msg);
+      }
+    })();
   </script>
 
 </body></html>
