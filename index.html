@@ -43,10 +43,27 @@
     .s06__wrap table tr.purchase-row td:nth-child(3) a { background: #44b5a1; }
     .s06__wrap table tr.purchase-row td:nth-child(4) a { background: #66badc; }
 
+    .s06__wrap table tr.purchase-row td select.amount-select {
+      display: block;
+      width: 80%;
+      margin: 0 auto .8em;
+      padding: .6em .5em;
+      font-size: 1.4rem;
+      font-weight: 700;
+      border: .2rem solid #333;
+      border-radius: .6rem;
+      text-align: center;
+      background: #fff;
+      cursor: pointer;
+    }
     @media screen and (max-width:749px) {
       .s06__wrap table tr.purchase-row td a {
         font-size: 1.1rem;
         padding: .8em .5em;
+        width: 90%;
+      }
+      .s06__wrap table tr.purchase-row td select.amount-select {
+        font-size: 1rem;
         width: 90%;
       }
     }
@@ -260,11 +277,31 @@
           <td colspan="4">Instagramを使ってオーガニックでの集客をメインとして行なっているため、広告費がかからない。<br>また人が教えるではなく、教材を使って受講生が主体的に学ぶ仕組みを作っているため。</td>
         </tr>
         <tr class="purchase-row">
-          <th></th>
-          <td><a href="#" data-plan="basic">購入する</a></td>
-          <td><a href="#" data-plan="standard">購入する</a></td>
-          <td><a href="#" data-plan="full">購入する</a></td>
-          <td><a href="#" data-plan="premium">購入する</a></td>
+          <th>お支払い金額</th>
+          <td>
+            <select class="amount-select" data-base="36">
+              <option value="360000">36万円</option>
+            </select>
+            <a href="#" class="purchase-btn">購入する</a>
+          </td>
+          <td>
+            <select class="amount-select" data-base="50">
+              <option value="500000">50万円</option>
+            </select>
+            <a href="#" class="purchase-btn">購入する</a>
+          </td>
+          <td>
+            <select class="amount-select" data-base="70">
+              <option value="700000">70万円</option>
+            </select>
+            <a href="#" class="purchase-btn">購入する</a>
+          </td>
+          <td>
+            <select class="amount-select" data-base="100">
+              <option value="1000000">100万円</option>
+            </select>
+            <a href="#" class="purchase-btn">購入する</a>
+          </td>
         </tr>
       </table>
     </section>
@@ -290,16 +327,32 @@
   <script src="assets/js/common.js"></script>
   <script src="assets/js/slick.min.js"></script>
   <script>
-    document.querySelectorAll('.purchase-row a[data-plan]').forEach(function(btn) {
+    // 金額セレクターに36〜100万の選択肢を生成
+    document.querySelectorAll('.amount-select').forEach(function(select) {
+      var base = parseInt(select.getAttribute('data-base'));
+      select.innerHTML = '';
+      for (var i = 36; i <= 100; i++) {
+        var opt = document.createElement('option');
+        opt.value = i * 10000;
+        opt.textContent = i + '万円';
+        if (i === base) opt.selected = true;
+        select.appendChild(opt);
+      }
+    });
+
+    // 購入ボタン
+    document.querySelectorAll('.purchase-btn').forEach(function(btn) {
       btn.addEventListener('click', function(e) {
         e.preventDefault();
-        var plan = this.getAttribute('data-plan');
+        var select = this.parentElement.querySelector('.amount-select');
+        var amount = parseInt(select.value);
         this.textContent = '処理中...';
         this.style.pointerEvents = 'none';
+        var self = this;
         fetch('/api/checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plan: plan })
+          body: JSON.stringify({ amount: amount })
         })
         .then(function(res) { return res.json(); })
         .then(function(data) {
@@ -307,14 +360,14 @@
             window.location.href = data.url;
           } else {
             alert('決済ページの作成に失敗しました。もう一度お試しください。');
-            btn.textContent = '購入する';
-            btn.style.pointerEvents = '';
+            self.textContent = '購入する';
+            self.style.pointerEvents = '';
           }
         })
         .catch(function() {
           alert('通信エラーが発生しました。もう一度お試しください。');
-          btn.textContent = '購入する';
-          btn.style.pointerEvents = '';
+          self.textContent = '購入する';
+          self.style.pointerEvents = '';
         });
       });
     });
