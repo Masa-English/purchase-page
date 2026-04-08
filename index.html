@@ -289,5 +289,35 @@
   <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
   <script src="assets/js/common.js"></script>
   <script src="assets/js/slick.min.js"></script>
+  <script>
+    document.querySelectorAll('.purchase-row a[data-plan]').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var plan = this.getAttribute('data-plan');
+        this.textContent = '処理中...';
+        this.style.pointerEvents = 'none';
+        fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan: plan })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.url) {
+            window.location.href = data.url;
+          } else {
+            alert('決済ページの作成に失敗しました。もう一度お試しください。');
+            btn.textContent = '購入する';
+            btn.style.pointerEvents = '';
+          }
+        })
+        .catch(function() {
+          alert('通信エラーが発生しました。もう一度お試しください。');
+          btn.textContent = '購入する';
+          btn.style.pointerEvents = '';
+        });
+      });
+    });
+  </script>
 
 </body></html>
