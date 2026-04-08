@@ -24,7 +24,6 @@ function isRateLimited(ip) {
 const priceCache = new Map();
 
 async function getOrCreatePrice(amount) {
-  // キャッシュにあればそれを使う
   if (priceCache.has(amount)) {
     return priceCache.get(amount);
   }
@@ -34,21 +33,27 @@ async function getOrCreatePrice(amount) {
     'Authorization': 'Bearer ' + process.env.PAYJP_SECRET_KEY,
   };
 
-  // pay.jpからlookup_keyで既存Priceを検索
+  // pay.jpから同一金額の既存Priceを検索（unit_amountで絞り込み）
   const searchRes = await fetch(
-    `https://api.pay.jp/v2/prices?product_id=${PRODUCT_ID}&lookup_key=amount_${amount}&limit=1`,
+    `https://api.pay.jp/v2/prices?product_id=${PRODUCT_ID}&limit=100`,
     { headers }
   );
+
+  if (!searchRes.ok) return null;
   const searchData = await searchRes.json();
 
-  if (searchData.data && searchData.data.length > 0) {
-    const priceId = searchData.data[0].id;
-    priceCache.set(amount, priceId);
-    return priceId;
+  // 同一金額のPriceを探す
+  const existing = searchData.data?.find(p => p.unit_amount === amount && p.active);
+  if (existing) {
+    priceCache.set(amount, existing.id);
+    return existing.id;
   }
 
-  // なければ新規作成
-  const man = amount >= 10000 ? (amount / 10000) + '万円' : amount.toLocaleString() + '円';
+  // なければ1回だけ新規作成（fallbackなし）
+  const man = amount >= 10000
+    ? (amount % 10000 === 0 ? (amount / 10000) + '万円' : Math.floor(amount / 10000) + '万' + (amount % 10000) + '円')
+    : amount.toLocaleString() + '円';
+
   const createRes = await fetch('https://api.pay.jp/v2/prices', {
     method: 'POST',
     headers,
@@ -57,30 +62,12 @@ async function getOrCreatePrice(amount) {
       unit_amount: amount,
       currency: 'jpy',
       nickname: man,
-      lookup_key: `amount_${amount}`,
     }),
   });
-  const createData = await createRes.json();
 
-  if (!createRes.ok || createData.error) {
-    // lookup_keyが未対応の場合、nicknameだけで作成
-    const fallbackRes = await fetch('https://api.pay.jp/v2/prices', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        product_id: PRODUCT_ID,
-        unit_amount: amount,
-        currency: 'jpy',
-        nickname: man,
-      }),
-    });
-    const fallbackData = await fallbackRes.json();
-    if (!fallbackRes.ok || fallbackData.error) {
-      return null;
-    }
-    priceCache.set(amount, fallbackData.id);
-    return fallbackData.id;
-  }
+  if (!createRes.ok) return null;
+  const createData = await createRes.json();
+  if (createData.error) return null;
 
   priceCache.set(amount, createData.id);
   return createData.id;
