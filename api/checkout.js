@@ -37,8 +37,9 @@ export default async function handler(req, res) {
 
     const session = await response.json();
 
-    if (session.error || session.status >= 400) {
-      return res.status(500).json({ error: 'Failed to create checkout session' });
+    if (!response.ok || session.error) {
+      console.error('pay.jp error:', JSON.stringify(session));
+      return res.status(500).json({ error: 'Failed to create checkout session', detail: session });
     }
 
     return res.status(200).json({ url: session.url });
