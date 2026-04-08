@@ -19,8 +19,44 @@ function isRateLimited(ip) {
   return entry.count > RATE_LIMIT_MAX;
 }
 
-// 36万〜100万（1万円刻み）のPrice IDマッピング
+// 2万〜120万（1万円刻み）のPrice IDマッピング
 const PRICES = {
+  // 2万〜35万（頭金・分割用）
+  20000: 'price_c6a8c5600ec53de9e806954a33',
+  30000: 'price_260f2c341cf2ce6b9c2670ac58',
+  40000: 'price_1761d3c58c8a06917a679e6f57',
+  50000: 'price_c665a0a55a02488aff46991eb8',
+  60000: 'price_2d331fe594ca01843c561fa5dc',
+  70000: 'price_fc2d0f1f4e66303a30e953f99d',
+  80000: 'price_d2374daf33589a4059e82148a5',
+  90000: 'price_220e4f61e762aa156576cf9e04',
+  100000: 'price_bee48260d618c452d9a5e30c48',
+  110000: 'price_80c72d6d7dfa500cf9c731dea3',
+  120000: 'price_eb1c3f973e0f79ac8c166fee97',
+  130000: 'price_890c5ea14b82896fa1f43d2041',
+  140000: 'price_fb8f778146de55e6fcceaeac5f',
+  150000: 'price_f3b0c178e624ef42719db968a7',
+  160000: 'price_d51209e17db978de372ae35aec',
+  170000: 'price_f3e1597d1e3f4cec37289fdf76',
+  180000: 'price_f1f8000da57a969f0836a3154b',
+  190000: 'price_c259299f558ef2bf28380d3a7c',
+  200000: 'price_59b382f97e89d73abc8f32b01b',
+  210000: 'price_017587493bf227df296eac6bf6',
+  220000: 'price_7642e10cf9cb755409712448ef',
+  230000: 'price_3d9e4331238ff2795492526edf',
+  240000: 'price_ea6620230c4bba9cad474d32f2',
+  250000: 'price_af78707848442930b216e83e98',
+  260000: 'price_30c33c21bb4a4e1d365eefc172',
+  270000: 'price_a2e643e73c97c74b58181c1f4c',
+  280000: 'price_d0428ec7e2ac37a34dea019e5b',
+  290000: 'price_e6badb147f5cfbce7fc4019c4a',
+  300000: 'price_423ebdf857dbba21a7cd544494',
+  310000: 'price_6c56b926d2f5c1ec50929c8b9a',
+  320000: 'price_b07a3e8e7c06e3b5f9365b68df',
+  330000: 'price_0a7c28008f12a3ef67e9bbd5de',
+  340000: 'price_9a3bbd855e86a325028c12dc01',
+  350000: 'price_31fe3d53bb4e4eebbe4f74d039',
+  // 36万〜100万（メインプラン）
   360000: 'price_a1979cf423474efb207b7201db',
   370000: 'price_5c4a240782cb794ff72ff35bf4',
   380000: 'price_5f50bf7b2dd379416d9b5e22a6',
@@ -86,6 +122,27 @@ const PRICES = {
   980000: 'price_bf31fd5ab8b31305eeaa32fe46',
   990000: 'price_768f60668aa6654bde8f2ac86e',
   1000000: 'price_11422403ec3234449115fb6275',
+  // 101万〜120万（プレミアム超）
+  1010000: 'price_964d73871288c649bd8ca7c54e',
+  1020000: 'price_826ac992eb808bceedfbcd4103',
+  1030000: 'price_4487b3d8c6b11735b4c730f9fd',
+  1040000: 'price_1caa12ab9addc6d610ef0bfa6a',
+  1050000: 'price_bad06876233a5121bb571b2603',
+  1060000: 'price_55ffc7f3991fe117836b3d0210',
+  1070000: 'price_4e19bd25c5728ecace0e82edcd',
+  1080000: 'price_d61c995de1db542ce0a63767c2',
+  1090000: 'price_103f7fbebac4a356daff978dc6',
+  1100000: 'price_360603cd1f2c467d76c6c88d62',
+  1110000: 'price_66bbbdbaf387e9381b22881eb8',
+  1120000: 'price_ebe2e89eb4f58e799585546b6b',
+  1130000: 'price_70290206f09fa5cd5714f8aedb',
+  1140000: 'price_f824ac8efaeaf06f8e13c00e28',
+  1150000: 'price_9a8c1bb9e932b85e467203d37e',
+  1160000: 'price_81e2c8d4f2b3d76bb1e7c24f04',
+  1170000: 'price_8b96ddf84f2ad14c12bf57bb20',
+  1180000: 'price_f777b0288c8e3b232f8715826b',
+  1190000: 'price_0ea883498e3807983291aeeef4',
+  1200000: 'price_c4da6f99236dade3bf7e02c56d',
 };
 
 export default async function handler(req, res) {
@@ -108,7 +165,7 @@ export default async function handler(req, res) {
 
   const amount = Number(req.body?.amount);
   if (!amount || !PRICES[amount]) {
-    return res.status(400).json({ error: 'Invalid amount. Must be 360000-1000000 in 10000 increments.' });
+    return res.status(400).json({ error: 'Invalid amount. Must be 20000-1200000 in 10000 increments.' });
   }
 
   const priceId = PRICES[amount];

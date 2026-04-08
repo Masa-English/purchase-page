@@ -331,7 +331,7 @@
     document.querySelectorAll('.amount-select').forEach(function(select) {
       var base = parseInt(select.getAttribute('data-base'));
       select.innerHTML = '';
-      for (var i = 36; i <= 100; i++) {
+      for (var i = 2; i <= 120; i++) {
         var opt = document.createElement('option');
         opt.value = i * 10000;
         opt.textContent = i + '万円';
