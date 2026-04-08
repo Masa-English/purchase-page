@@ -21,7 +21,7 @@
       text-align: center;
       border: .1rem solid #000;
     }
-    .s06__wrap table tr.purchase-row td a {
+    .s06__wrap table tr.purchase-row td a.purchase-btn-plan {
       display: inline-block;
       color: #fff;
       font-size: 1.6rem;
@@ -34,36 +34,18 @@
       width: 80%;
       box-sizing: border-box;
     }
-    .s06__wrap table tr.purchase-row td a:hover {
+    .s06__wrap table tr.purchase-row td a.purchase-btn-plan:hover {
       opacity: 0.85;
       transform: translateY(-2px);
     }
-    .s06__wrap table tr.purchase-row td:nth-child(1) a { background: #f97d7d; }
-    .s06__wrap table tr.purchase-row td:nth-child(2) a { background: #f7b12b; }
-    .s06__wrap table tr.purchase-row td:nth-child(3) a { background: #44b5a1; }
-    .s06__wrap table tr.purchase-row td:nth-child(4) a { background: #66badc; }
-
-    .s06__wrap table tr.purchase-row td select.amount-select {
-      display: block;
-      width: 80%;
-      margin: 0 auto .8em;
-      padding: .6em .5em;
-      font-size: 1.4rem;
-      font-weight: 700;
-      border: .2rem solid #333;
-      border-radius: .6rem;
-      text-align: center;
-      background: #fff;
-      cursor: pointer;
-    }
+    .s06__wrap table tr.purchase-row td:nth-child(2) a { background: #f97d7d; }
+    .s06__wrap table tr.purchase-row td:nth-child(3) a { background: #f7b12b; }
+    .s06__wrap table tr.purchase-row td:nth-child(4) a { background: #44b5a1; }
+    .s06__wrap table tr.purchase-row td:nth-child(5) a { background: #66badc; }
     @media screen and (max-width:749px) {
-      .s06__wrap table tr.purchase-row td a {
+      .s06__wrap table tr.purchase-row td a.purchase-btn-plan {
         font-size: 1.1rem;
         padding: .8em .5em;
-        width: 90%;
-      }
-      .s06__wrap table tr.purchase-row td select.amount-select {
-        font-size: 1rem;
         width: 90%;
       }
     }
@@ -277,31 +259,11 @@
           <td colspan="4">Instagramを使ってオーガニックでの集客をメインとして行なっているため、広告費がかからない。<br>また人が教えるではなく、教材を使って受講生が主体的に学ぶ仕組みを作っているため。</td>
         </tr>
         <tr class="purchase-row">
-          <th>お支払い金額</th>
-          <td>
-            <select class="amount-select" data-base="36">
-              <option value="360000">36万円</option>
-            </select>
-            <a href="#" class="purchase-btn">購入する</a>
-          </td>
-          <td>
-            <select class="amount-select" data-base="50">
-              <option value="500000">50万円</option>
-            </select>
-            <a href="#" class="purchase-btn">購入する</a>
-          </td>
-          <td>
-            <select class="amount-select" data-base="70">
-              <option value="700000">70万円</option>
-            </select>
-            <a href="#" class="purchase-btn">購入する</a>
-          </td>
-          <td>
-            <select class="amount-select" data-base="100">
-              <option value="1000000">100万円</option>
-            </select>
-            <a href="#" class="purchase-btn">購入する</a>
-          </td>
+          <th></th>
+          <td><a href="/?amount=360000" class="purchase-btn-plan">購入する</a></td>
+          <td><a href="/?amount=500000" class="purchase-btn-plan">購入する</a></td>
+          <td><a href="/?amount=700000" class="purchase-btn-plan">購入する</a></td>
+          <td><a href="/?amount=1000000" class="purchase-btn-plan">購入する</a></td>
         </tr>
       </table>
     </section>
