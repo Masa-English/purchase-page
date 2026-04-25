@@ -4,7 +4,7 @@ const ALLOWED_ORIGINS = [
 ];
 const BASE_URL = 'https://purchase-page-six.vercel.app';
 const PRODUCT_ID = 'prod_57ef9457576ec420cb285b75aaf';
-const ANALYSISTOOL_API = process.env.ANALYSISTOOL_API_BASE || 'https://analysis-roan-delta.vercel.app';
+const SELF_API_BASE = process.env.SELF_API_BASE || 'https://purchase-page-six.vercel.app';
 
 const rateLimitMap = new Map();
 const RATE_LIMIT_WINDOW = 60_000;
@@ -73,9 +73,7 @@ async function getOrCreatePrice(amount) {
 
 async function fetchPaymentLink(token) {
   try {
-    const res = await fetch(`${ANALYSISTOOL_API}/api/payment-links?token=${encodeURIComponent(token)}`, {
-      headers: { 'Origin': BASE_URL },
-    });
+    const res = await fetch(`${SELF_API_BASE}/api/payment-links?token=${encodeURIComponent(token)}`);
     if (!res.ok) return null;
     return await res.json();
   } catch (e) {

@@ -1,8 +1,22 @@
 {
+  "framework": null,
   "buildCommand": "",
   "outputDirectory": ".",
   "rewrites": [
-    { "source": "/api/checkout", "destination": "/api/checkout.js" },
     { "source": "/plans", "destination": "/plans.html" }
-  ]
+  ],
+  "functions": {
+    "api/payjp-webhook.js": {
+      "maxDuration": 30
+    },
+    "api/payment-links.js": {
+      "maxDuration": 15
+    },
+    "api/payment-status.js": {
+      "maxDuration": 15
+    },
+    "api/checkout.js": {
+      "maxDuration": 30
+    }
+  }
 }

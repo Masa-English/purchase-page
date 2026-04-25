@@ -125,7 +125,7 @@
     (function() {
       var PASS_HASH = '529f7876cfe158e0307064f15fbd58b8438f5137f1c14f82d40339f9dddd53be';
       var STORED_HASH_KEY = 'sales-auth-hash';
-      var ANALYSISTOOL_API = 'https://analysis-roan-delta.vercel.app';
+      var API_BASE = '';
 
       function showError(msg) {
         document.body.innerHTML = '<p style="text-align:center;padding:3em;font-family:sans-serif;">' + msg + '</p>';
@@ -211,7 +211,7 @@
         btnGenerate.textContent = '発行中…';
 
         try {
-          var res = await fetch(ANALYSISTOOL_API + '/api/payment-links', {
+          var res = await fetch(API_BASE + '/api/payment-links', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -325,7 +325,7 @@
           if (!item.token) continue;
           if (item.status === 'paid' || item.status === 'failed' || item.status === 'refunded') continue;
           try {
-            var res = await fetch(ANALYSISTOOL_API + '/api/payment-links?token=' + encodeURIComponent(item.token));
+            var res = await fetch(API_BASE + '/api/payment-links?token=' + encodeURIComponent(item.token));
             if (!res.ok) continue;
             var data = await res.json();
             if (data && data.status && data.status !== item.status) {

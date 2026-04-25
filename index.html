@@ -290,7 +290,7 @@
   <script src="assets/js/slick.min.js"></script>
   <script>
     (function() {
-      var ANALYSISTOOL_API = 'https://analysis-roan-delta.vercel.app';
+      var API_BASE = '';
       var params = new URLSearchParams(window.location.search);
       var token = params.get('token');
       var fixedAmount = parseInt(params.get('amount'));
@@ -455,7 +455,7 @@
 
       // Token mode (preferred new flow)
       if (token && /^[a-f0-9-]{36}$/i.test(token)) {
-        fetch(ANALYSISTOOL_API + '/api/payment-links?token=' + encodeURIComponent(token))
+        fetch(API_BASE + '/api/payment-links?token=' + encodeURIComponent(token))
           .then(function(res) { return res.json().then(function(data){ return { ok: res.ok, data: data }; }); })
           .then(function(r) {
             if (!r.ok) {
