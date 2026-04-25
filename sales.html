@@ -59,22 +59,13 @@
 <body>
   <div class="container">
     <h1>Masa English 決済リンク生成</h1>
-    <p class="subtitle">営業担当専用 — 顧客情報を入れて専用リンクを発行</p>
+    <p class="subtitle">営業担当専用 — 金額を入れて専用リンクを発行</p>
 
     <div class="info-box">
-      💡 リンク発行 → 顧客がリンク開いて<strong>名前を入力</strong> → 決済 → 商談一覧に自動反映。<br>
-      お客様のお名前は<strong>顧客が決済画面で入力</strong>します。営業側ではメモ程度でOK。
+      💡 営業担当 + 金額入力 → リンク発行 → 顧客がリンク開いて<strong>フルネーム入力 → 決済</strong> → 「決済状況」タブに自動反映。
     </div>
 
     <div class="card">
-      <div class="row">
-        <label for="customer-name">お客様のお名前（メモ・任意）</label>
-        <input type="text" id="customer-name" placeholder="例: 田中 太郎（顧客が決済画面で再入力します）" autocomplete="off" />
-      </div>
-      <div class="row">
-        <label for="customer-email">お客様のメールアドレス（任意）</label>
-        <input type="email" id="customer-email" placeholder="例: tanaka@example.com（pay.jp領収書用）" autocomplete="off" />
-      </div>
       <div class="row">
         <label for="sales-person">担当の営業マン <span style="color:#f97d7d;">*</span></label>
         <input type="text" id="sales-person" placeholder="例: 福村" autocomplete="off" />
@@ -148,8 +139,6 @@
         return;
       }
 
-      var nameInput = document.getElementById('customer-name');
-      var emailInput = document.getElementById('customer-email');
       var salesInput = document.getElementById('sales-person');
       var amountInput = document.getElementById('amount-input');
       var amountDisplay = document.getElementById('amount-display');
@@ -201,8 +190,6 @@
       });
 
       btnGenerate.addEventListener('click', async function() {
-        var name = nameInput.value.trim() || '未入力';
-        var email = emailInput.value.trim();
         var sales = salesInput.value.trim();
         if (!sales) { showToast('担当の営業マンを入れてください'); salesInput.focus(); return; }
         if (!validateAmount()) return;
@@ -218,8 +205,6 @@
               'Authorization': 'Bearer ' + authedHash,
             },
             body: JSON.stringify({
-              customer_name: name,
-              customer_email: email || undefined,
               sales_person: sales,
               amount: getAmount(),
             }),
@@ -237,7 +222,7 @@
           resultBox.style.display = 'block';
           saveRecent({
             token: data.token,
-            customer_name: name,
+            customer_name: '(顧客入力待ち)',
             sales_person: sales,
             amount: getAmount(),
             url: data.url,
