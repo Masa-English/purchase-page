@@ -62,13 +62,14 @@
     <p class="subtitle">営業担当専用 — 顧客情報を入れて専用リンクを発行</p>
 
     <div class="info-box">
-      💡 顧客情報を入れて発行すると、決済結果がSlackで通知され、商談一覧にも自動反映されます。
+      💡 リンク発行 → 顧客がリンク開いて<strong>名前を入力</strong> → 決済 → 商談一覧に自動反映。<br>
+      お客様のお名前は<strong>顧客が決済画面で入力</strong>します。営業側ではメモ程度でOK。
     </div>
 
     <div class="card">
       <div class="row">
-        <label for="customer-name">お客様のお名前 <span style="color:#f97d7d;">*</span></label>
-        <input type="text" id="customer-name" placeholder="例: 田中 太郎" autocomplete="off" />
+        <label for="customer-name">お客様のお名前（メモ・任意）</label>
+        <input type="text" id="customer-name" placeholder="例: 田中 太郎（顧客が決済画面で再入力します）" autocomplete="off" />
       </div>
       <div class="row">
         <label for="customer-email">お客様のメールアドレス（任意）</label>
@@ -200,10 +201,9 @@
       });
 
       btnGenerate.addEventListener('click', async function() {
-        var name = nameInput.value.trim();
+        var name = nameInput.value.trim() || '未入力';
         var email = emailInput.value.trim();
         var sales = salesInput.value.trim();
-        if (!name) { showToast('お客様のお名前を入れてください'); nameInput.focus(); return; }
         if (!sales) { showToast('担当の営業マンを入れてください'); salesInput.focus(); return; }
         if (!validateAmount()) return;
 

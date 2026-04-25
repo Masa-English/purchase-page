@@ -260,10 +260,9 @@
         </tr>
         <tr class="purchase-row">
           <th></th>
-          <td><a href="/?amount=360000" class="purchase-btn-plan">購入する</a></td>
-          <td><a href="/?amount=500000" class="purchase-btn-plan">購入する</a></td>
-          <td><a href="/?amount=700000" class="purchase-btn-plan">購入する</a></td>
-          <td><a href="/?amount=1000000" class="purchase-btn-plan">購入する</a></td>
+          <td colspan="4" style="text-align:center;padding:1.5em;color:#888;font-size:1.1rem;">
+            ※ お支払いはご担当者よりお送りするリンクからお手続きください
+          </td>
         </tr>
       </table>
     </section>
@@ -324,26 +323,33 @@
         var purchaseRow = document.querySelector('.purchase-row');
         if (!purchaseRow) return;
         var man = formatAmount(linkInfo.amount);
-        var customerName = linkInfo.customer_name || 'お客様';
+        var prefilledName = linkInfo.customer_name && linkInfo.customer_name !== '未入力' ? linkInfo.customer_name : '';
         var alreadyPaid = linkInfo.status === 'paid';
         var html = '<th>お支払い情報</th>' +
           '<td colspan="4" style="text-align:left;padding:2em 1.5em;">' +
             '<div style="background:#fafbfc;border:1px solid #e5e7eb;border-radius:8px;padding:1.2em 1.4em;margin-bottom:1.2em;">' +
-              '<p style="font-size:1.1rem;color:#666;margin-bottom:.4em;">' + escapeHtml(customerName) + '様 専用ページ</p>' +
               '<p style="font-size:2.2rem;font-weight:900;color:#0f172a;">' + man + '<span style="font-size:1.2rem;font-weight:400;color:#666;margin-left:.4em;">（税込）</span></p>' +
             '</div>' +
             (alreadyPaid
               ? '<div style="background:#44b5a1;color:#fff;text-align:center;padding:1.2em;border-radius:8px;font-size:1.2rem;font-weight:700;">✅ このリンクは既にお支払い済みです<br><span style="font-size:.95rem;font-weight:400;">担当より受講開始のご連絡をいたします</span></div>'
-              : '<div style="text-align:center;">' +
-                '<a href="#" class="purchase-btn-fixed" style="display:inline-block;color:#fff;font-size:1.6rem;font-weight:700;letter-spacing:.05em;padding:1.1em 2.8em;border-radius:.8rem;text-decoration:none;background:#44b5a1;transition:opacity 0.3s,transform 0.2s;">購入手続きへ進む</a>' +
-                '<div style="margin-top:1.2em;padding:1em 1.2em;background:#fff8e1;border:1px solid #ffd54f;border-radius:8px;font-size:.9rem;color:#5d4500;text-align:left;line-height:1.7;">' +
-                  '<strong>⚠️ ご決済の手順とご注意</strong><br>' +
-                  '① 上のボタンから決済画面へ進みます<br>' +
-                  '② カード情報を入力 → 決済を実行<br>' +
-                  '③ <strong>カード会社の本人認証（3Dセキュア）</strong>画面に切り替わります<br>' +
-                  '　　 → SMSや銀行アプリに届いた認証コードを必ず入力してください<br>' +
-                  '④ 認証完了で決済完了。完了画面が表示されます<br><br>' +
-                  '※ ¥30万以上のお支払いは本人認証が必須です。途中で画面を閉じると決済が完了しないので、最後まで進めてください。' +
+              : '<div>' +
+                '<div style="background:#f8f9fb;border:1px solid #e5e7eb;border-radius:8px;padding:1.2em 1.4em;margin-bottom:1.2em;">' +
+                  '<label style="display:block;font-size:.95rem;font-weight:700;color:#0f172a;margin-bottom:.5em;">お名前 <span style="color:#dc2626;">*</span></label>' +
+                  '<input type="text" id="cust-name-input" placeholder="例：山田太郎" value="' + escapeHtml(prefilledName) + '" style="width:100%;padding:.8em 1em;font-size:1rem;border:1px solid #cbd5e1;border-radius:6px;font-family:inherit;box-sizing:border-box;" />' +
+                  '<label style="display:block;font-size:.95rem;font-weight:700;color:#0f172a;margin:1em 0 .5em;">メールアドレス（任意）</label>' +
+                  '<input type="email" id="cust-email-input" placeholder="例：example@email.com" style="width:100%;padding:.8em 1em;font-size:1rem;border:1px solid #cbd5e1;border-radius:6px;font-family:inherit;box-sizing:border-box;" />' +
+                '</div>' +
+                '<div style="text-align:center;">' +
+                  '<a href="#" class="purchase-btn-fixed" style="display:inline-block;color:#fff;font-size:1.6rem;font-weight:700;letter-spacing:.05em;padding:1.1em 2.8em;border-radius:.8rem;text-decoration:none;background:#44b5a1;transition:opacity 0.3s,transform 0.2s;">購入手続きへ進む</a>' +
+                  '<div style="margin-top:1.2em;padding:1em 1.2em;background:#fff8e1;border:1px solid #ffd54f;border-radius:8px;font-size:.9rem;color:#5d4500;text-align:left;line-height:1.7;">' +
+                    '<strong>⚠️ ご決済の手順とご注意</strong><br>' +
+                    '① 上のボタンから決済画面へ進みます<br>' +
+                    '② カード情報を入力 → 決済を実行<br>' +
+                    '③ <strong>カード会社の本人認証（3Dセキュア）</strong>画面に切り替わります<br>' +
+                    '　　 → SMSや銀行アプリに届いた認証コードを必ず入力してください<br>' +
+                    '④ 認証完了で決済完了。完了画面が表示されます<br><br>' +
+                    '※ ¥30万以上のお支払いは本人認証が必須です。途中で画面を閉じると決済が完了しないので、最後まで進めてください。' +
+                  '</div>' +
                 '</div>' +
               '</div>') +
           '</td>';
@@ -355,13 +361,27 @@
         if (!fixedBtn) return;
         fixedBtn.addEventListener('click', function(e) {
           e.preventDefault();
+          var nameInput = document.getElementById('cust-name-input');
+          var emailInput = document.getElementById('cust-email-input');
+          var nameVal = nameInput ? nameInput.value.trim() : '';
+          var emailVal = emailInput ? emailInput.value.trim() : '';
+          if (nameVal.length < 2) {
+            alert('お名前を入力してください。');
+            if (nameInput) nameInput.focus();
+            return;
+          }
+          if (emailVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+            alert('メールアドレスの形式が正しくありません。');
+            if (emailInput) emailInput.focus();
+            return;
+          }
           this.textContent = '読み込み中（最大10秒ほどかかります）';
           this.style.pointerEvents = 'none';
           var self = this;
           fetch('/api/checkout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: token }),
+            body: JSON.stringify({ token: token, customer_name: nameVal, customer_email: emailVal }),
           })
           .then(function(res) { return res.json(); })
           .then(function(data) {
@@ -470,9 +490,6 @@
             renderNoLink();
             showResultBanner('fail', '通信エラー。担当者にご連絡ください。');
           });
-      } else if (fixedAmount && fixedAmount >= 1000 && fixedAmount <= 1200000 && fixedAmount % 1000 === 0) {
-        renderLegacyAmountPurchase(fixedAmount);
-        showResultMessages(null);
       } else {
         renderNoLink();
         showResultMessages(null);

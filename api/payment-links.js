@@ -73,14 +73,14 @@ module.exports = async (req, res) => {
     }
 
     const body = req.body || {};
-    const customerName = (body.customer_name || '').trim();
+    const customerName = (body.customer_name || '').trim() || '未入力';
     const customerEmail = (body.customer_email || '').trim() || null;
     const salesPerson = (body.sales_person || '').trim() || null;
     const amount = Number(body.amount);
     const consultationId = body.consultation_id ? Number(body.consultation_id) : null;
     const notes = (body.notes || '').trim() || null;
 
-    if (!customerName) return res.status(400).json({ error: 'customer_name required' });
+    if (!salesPerson) return res.status(400).json({ error: 'sales_person required' });
     if (!Number.isInteger(amount) || amount < 1000 || amount > 1200000 || amount % 1000 !== 0) {
       return res.status(400).json({ error: 'invalid amount (1000-1200000, 1000 yen step)' });
     }
