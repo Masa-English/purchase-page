@@ -59,17 +59,13 @@
 <body>
   <div class="container">
     <h1>Masa English 決済リンク生成</h1>
-    <p class="subtitle">営業担当専用 — 金額を入れて専用リンクを発行</p>
+    <p class="subtitle">金額を入れて専用リンクを発行</p>
 
     <div class="info-box">
-      💡 営業担当 + 金額入力 → リンク発行 → 顧客がリンク開いて<strong>フルネーム入力 → 決済</strong> → 「決済状況」タブに自動反映。
+      💡 金額入力 → リンク発行 → 顧客がリンク開いて<strong>フルネーム入力 → 決済</strong> → 「決済状況」タブに自動反映。
     </div>
 
     <div class="card">
-      <div class="row">
-        <label for="sales-person">担当の営業マン <span style="color:#f97d7d;">*</span></label>
-        <input type="text" id="sales-person" placeholder="例: 福村" autocomplete="off" />
-      </div>
       <div class="row amount">
         <label for="amount-input">お支払い金額（円） <span style="color:#f97d7d;">*</span></label>
         <div style="display:flex;align-items:center;gap:.5em;">
@@ -139,7 +135,6 @@
         return;
       }
 
-      var salesInput = document.getElementById('sales-person');
       var amountInput = document.getElementById('amount-input');
       var amountDisplay = document.getElementById('amount-display');
       var amountError = document.getElementById('amount-error');
@@ -149,9 +144,6 @@
       var btnCopy = document.getElementById('btn-copy');
       var btnPreview = document.getElementById('btn-preview');
       var toast = document.getElementById('toast');
-
-      var savedSales = localStorage.getItem('sales-person');
-      if (savedSales) salesInput.value = savedSales;
 
       function formatAmount(amount) {
         if (amount >= 10000 && amount % 10000 === 0) return (amount / 10000) + '万円';
@@ -190,8 +182,6 @@
       });
 
       btnGenerate.addEventListener('click', async function() {
-        var sales = salesInput.value.trim();
-        if (!sales) { showToast('担当の営業マンを入れてください'); salesInput.focus(); return; }
         if (!validateAmount()) return;
 
         btnGenerate.disabled = true;
@@ -205,7 +195,6 @@
               'Authorization': 'Bearer ' + authedHash,
             },
             body: JSON.stringify({
-              sales_person: sales,
               amount: getAmount(),
             }),
           });
@@ -217,13 +206,11 @@
             return;
           }
 
-          localStorage.setItem('sales-person', sales);
           resultUrl.textContent = data.url;
           resultBox.style.display = 'block';
           saveRecent({
             token: data.token,
             customer_name: '(顧客入力待ち)',
-            sales_person: sales,
             amount: getAmount(),
             url: data.url,
             created_at: new Date().toISOString(),

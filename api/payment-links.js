@@ -80,7 +80,7 @@ module.exports = async (req, res) => {
     const consultationId = body.consultation_id ? Number(body.consultation_id) : null;
     const notes = (body.notes || '').trim() || null;
 
-    if (!salesPerson) return res.status(400).json({ error: 'sales_person required' });
+    // sales_person, customer_name 任意
     if (!Number.isInteger(amount) || amount < 1000 || amount > 1200000 || amount % 1000 !== 0) {
       return res.status(400).json({ error: 'invalid amount (1000-1200000, 1000 yen step)' });
     }
