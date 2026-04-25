@@ -9,68 +9,89 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Noto Sans JP', sans-serif; background: #f5f5f5; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 2em 1.5em; }
-    h1 { font-size: 1.4rem; text-align: center; margin-bottom: .5em; }
+    body { font-family: 'Noto Sans JP', sans-serif; background: #f5f5f5; color: #333; padding-bottom: 4em; }
+    .container { max-width: 640px; margin: 0 auto; padding: 2em 1.2em; }
+    h1 { font-size: 1.5rem; text-align: center; margin-bottom: .5em; }
     .subtitle { text-align: center; font-size: .85rem; color: #888; margin-bottom: 2em; }
-    .card { background: #fff; border-radius: 12px; padding: 2em; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 1.5em; }
-    label { display: block; font-weight: 700; margin-bottom: .5em; font-size: .95rem; }
-    select { width: 100%; padding: .8em; font-size: 1.2rem; font-weight: 700; border: 2px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; }
-    select:focus { border-color: #44b5a1; outline: none; }
-    .preview { margin-top: 1.5em; padding: 1.2em; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; }
-    .preview-label { font-size: .8rem; color: #888; margin-bottom: .3em; }
-    .preview-url { font-size: .85rem; word-break: break-all; color: #333; font-family: monospace; background: #fff; padding: .6em; border-radius: 4px; border: 1px solid #ddd; }
-    .btn-group { display: flex; gap: .8em; margin-top: 1.2em; }
-    .btn { flex: 1; padding: 1em; font-size: 1rem; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; text-align: center; transition: opacity .2s, transform .15s; }
-    .btn:hover { opacity: .85; transform: translateY(-1px); }
-    .btn:active { transform: translateY(0); }
+    .card { background: #fff; border-radius: 12px; padding: 2em 1.6em; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 1.5em; }
+    label { display: block; font-weight: 700; margin-bottom: .4em; font-size: .9rem; color: #444; }
+    .row { margin-bottom: 1.2em; }
+    input[type=text], input[type=email], input[type=number], select {
+      width: 100%; padding: .8em; font-size: 1rem; border: 2px solid #ddd; border-radius: 8px; background: #fff; font-family: inherit;
+    }
+    input:focus, select:focus { border-color: #44b5a1; outline: none; }
+    .row.amount input[type=number] { font-size: 1.4rem; font-weight: 700; text-align: right; }
+    .amount-display { text-align: center; font-size: 2.4rem; font-weight: 900; margin: .5em 0; color: #44b5a1; }
+    .err { color: #f97d7d; font-size: .85rem; margin-top: .3em; }
+    .btn { display: inline-block; padding: 1em 1.5em; font-size: 1rem; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; text-align: center; transition: opacity .2s, transform .15s; }
+    .btn-primary { background: #44b5a1; color: #fff; width: 100%; font-size: 1.1rem; padding: 1.1em; }
+    .btn-primary:hover { opacity: .85; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .quick-grid { display: flex; flex-wrap: wrap; gap: .4em; margin-top: .4em; }
+    .quick-btn { padding: .4em .9em; font-size: .85rem; font-weight: 700; border: 1.5px solid #44b5a1; border-radius: 6px; background: #fff; color: #44b5a1; cursor: pointer; }
+    .quick-btn:hover { background: #44b5a1; color: #fff; }
+    .result-box { padding: 1.2em; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; margin-top: 1em; }
+    .result-url { font-size: .85rem; word-break: break-all; color: #333; font-family: monospace; background: #fff; padding: .8em; border-radius: 4px; border: 1px solid #ddd; }
+    .result-actions { display: flex; gap: .6em; margin-top: .8em; flex-wrap: wrap; }
+    .result-actions .btn { flex: 1; padding: .8em; font-size: .9rem; }
     .btn-copy { background: #44b5a1; color: #fff; }
     .btn-open { background: #66badc; color: #fff; }
     .toast { position: fixed; bottom: 2em; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: .8em 2em; border-radius: 8px; font-size: .9rem; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 9999; }
     .toast.show { opacity: 1; }
-    .amount-display { text-align: center; font-size: 2.4rem; font-weight: 900; margin: .5em 0; color: #44b5a1; }
-    .recent { margin-top: 1em; }
-    .recent h3 { font-size: .85rem; color: #888; margin-bottom: .5em; }
+    .recent { margin-top: 0; }
+    .recent h3 { font-size: .85rem; color: #666; margin-bottom: .8em; }
     .recent-list { list-style: none; }
-    .recent-list li { padding: .5em 0; border-bottom: 1px solid #eee; font-size: .85rem; display: flex; justify-content: space-between; align-items: center; }
-    .recent-list li a { color: #44b5a1; text-decoration: none; font-weight: 700; }
-    .quick-btn { padding: .4em .8em; font-size: .85rem; font-weight: 700; border: 1.5px solid #44b5a1; border-radius: 6px; background: #fff; color: #44b5a1; cursor: pointer; transition: all .15s; }
-    .quick-btn:hover { background: #44b5a1; color: #fff; }
+    .recent-list li { padding: .8em 0; border-bottom: 1px solid #eee; font-size: .85rem; }
+    .recent-list .top { display: flex; justify-content: space-between; align-items: center; gap: .5em; margin-bottom: .3em; }
+    .recent-list .name { font-weight: 700; flex: 1; }
+    .recent-list .amount { color: #44b5a1; font-weight: 700; white-space: nowrap; }
+    .recent-list .meta { font-size: .75rem; color: #888; display: flex; gap: 1em; flex-wrap: wrap; }
+    .recent-list .badge { display: inline-block; padding: .1em .6em; border-radius: 4px; font-size: .7rem; font-weight: 700; }
+    .badge-pending { background: #ffa50022; color: #b87000; border: 1px solid #ffa50055; }
+    .badge-paid { background: #44b5a122; color: #2c7065; border: 1px solid #44b5a155; }
+    .badge-failed { background: #f97d7d22; color: #a04040; border: 1px solid #f97d7d55; }
+    .recent-list .actions { display: flex; gap: .4em; margin-top: .4em; }
+    .recent-list .btn-mini { padding: .3em .8em; font-size: .75rem; border: 1px solid #44b5a1; background: #fff; color: #44b5a1; border-radius: 4px; cursor: pointer; text-decoration: none; }
+    .recent-list .btn-mini:hover { background: #44b5a1; color: #fff; }
+    .info-box { background: #eaf6ff; border: 1px solid #b3d8f0; border-radius: 8px; padding: .8em 1em; font-size: .85rem; margin-bottom: 1.2em; color: #1a5078; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Masa English 決済リンク生成</h1>
-    <p class="subtitle">営業担当専用 — 顧客には生成されたリンクを共有してください</p>
+    <p class="subtitle">営業担当専用 — 顧客情報を入れて専用リンクを発行</p>
+
+    <div class="info-box">
+      💡 顧客情報を入れて発行すると、決済結果がSlackで通知され、商談一覧にも自動反映されます。
+    </div>
 
     <div class="card">
-      <label for="amount-input">お支払い金額（円）</label>
-      <div style="display:flex;align-items:center;gap:.5em;">
-        <input type="number" id="amount-input" min="1000" max="1200000" step="1000" value="360000" style="flex:1;padding:.8em;font-size:1.4rem;font-weight:700;border:2px solid #ddd;border-radius:8px;text-align:right;" />
-        <span style="font-size:1.2rem;font-weight:700;">円</span>
+      <div class="row">
+        <label for="customer-name">お客様のお名前 <span style="color:#f97d7d;">*</span></label>
+        <input type="text" id="customer-name" placeholder="例: 田中 太郎" autocomplete="off" />
       </div>
-      <div class="amount-display" id="amount-display">36万円</div>
-      <p id="amount-error" style="color:#f97d7d;font-size:.85rem;margin-top:.3em;display:none;"></p>
-
-      <div class="preview">
-        <div class="preview-label">顧客用リンク</div>
-        <div class="preview-url" id="preview-url"></div>
+      <div class="row">
+        <label for="customer-email">お客様のメールアドレス（任意）</label>
+        <input type="email" id="customer-email" placeholder="例: tanaka@example.com（pay.jp領収書用）" autocomplete="off" />
       </div>
-
-      <div class="btn-group">
-        <button class="btn btn-copy" id="btn-copy">リンクをコピー</button>
-        <button class="btn btn-open" id="btn-open">プレビュー</button>
+      <div class="row">
+        <label for="sales-person">担当の営業マン <span style="color:#f97d7d;">*</span></label>
+        <input type="text" id="sales-person" placeholder="例: 福村" autocomplete="off" />
       </div>
-
-      <div style="margin-top:1.2em;">
-        <p style="font-size:.8rem;color:#888;">よく使う金額</p>
-        <div style="display:flex;flex-wrap:wrap;gap:.4em;margin-top:.4em;">
+      <div class="row amount">
+        <label for="amount-input">お支払い金額（円） <span style="color:#f97d7d;">*</span></label>
+        <div style="display:flex;align-items:center;gap:.5em;">
+          <input type="number" id="amount-input" min="1000" max="1200000" step="1000" value="360000" style="flex:1;" />
+          <span style="font-size:1.2rem;font-weight:700;">円</span>
+        </div>
+        <div class="amount-display" id="amount-display">36万円</div>
+        <p id="amount-error" class="err" style="display:none;"></p>
+        <p style="font-size:.8rem;color:#888;margin-top:.4em;">よく使う金額</p>
+        <div class="quick-grid">
           <button class="quick-btn" data-amount="25000">2.5万</button>
           <button class="quick-btn" data-amount="50000">5万</button>
           <button class="quick-btn" data-amount="100000">10万</button>
-          <button class="quick-btn" data-amount="150000">15万</button>
           <button class="quick-btn" data-amount="180000">18万</button>
-          <button class="quick-btn" data-amount="200000">20万</button>
           <button class="quick-btn" data-amount="260000">26万</button>
           <button class="quick-btn" data-amount="360000">36万</button>
           <button class="quick-btn" data-amount="500000">50万</button>
@@ -78,11 +99,23 @@
           <button class="quick-btn" data-amount="1000000">100万</button>
         </div>
       </div>
+      <button class="btn btn-primary" id="btn-generate">この内容で決済リンクを発行する</button>
+
+      <div id="result" style="display:none;" class="result-box">
+        <div style="font-size:.85rem;color:#666;margin-bottom:.4em;">発行されたリンク（顧客にお送りください）</div>
+        <div class="result-url" id="result-url"></div>
+        <div class="result-actions">
+          <button class="btn btn-copy" id="btn-copy">リンクをコピー</button>
+          <button class="btn btn-open" id="btn-preview">プレビュー</button>
+        </div>
+        <p style="font-size:.78rem;color:#888;margin-top:.6em;">⚠️ ¥30万以上の決済は3Dセキュア認証が必須です。お客様には「カード会社のSMSや銀行アプリで届く認証コードを入れて完了するまで進めてください」とお伝えください。</p>
+      </div>
     </div>
 
     <div class="card recent" id="recent-card" style="display:none;">
-      <h3>最近生成したリンク</h3>
+      <h3>最近発行したリンク（このブラウザ内のみ）</h3>
       <ul class="recent-list" id="recent-list"></ul>
+      <button class="btn btn-mini" id="btn-refresh-recent" style="margin-top:.5em;">ステータスを更新</button>
     </div>
   </div>
 
@@ -90,32 +123,45 @@
 
   <script>
     (function() {
-      // 簡易認証（セッション内のみ有効）
       var PASS_HASH = '529f7876cfe158e0307064f15fbd58b8438f5137f1c14f82d40339f9dddd53be';
-      var authed = sessionStorage.getItem('sales-auth');
-      if (!authed) {
+      var STORED_HASH_KEY = 'sales-auth-hash';
+      var ANALYSISTOOL_API = 'https://analysis-roan-delta.vercel.app';
+
+      function showError(msg) {
+        document.body.innerHTML = '<p style="text-align:center;padding:3em;font-family:sans-serif;">' + msg + '</p>';
+      }
+
+      var authedHash = sessionStorage.getItem(STORED_HASH_KEY);
+      if (!authedHash) {
         var pw = prompt('パスワードを入力してください');
-        if (!pw) { document.body.innerHTML = '<p style="text-align:center;padding:3em;">アクセスが拒否されました。</p>'; return; }
+        if (!pw) { showError('アクセスが拒否されました。'); return; }
         crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw)).then(function(buf) {
           var hash = Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
           if (hash === PASS_HASH) {
-            sessionStorage.setItem('sales-auth', '1');
+            sessionStorage.setItem(STORED_HASH_KEY, hash);
             location.reload();
           } else {
-            document.body.innerHTML = '<p style="text-align:center;padding:3em;">パスワードが違います。</p>';
+            showError('パスワードが違います。');
           }
         });
         return;
       }
 
-      var BASE = 'https://purchase-page-six.vercel.app';
-      var input = document.getElementById('amount-input');
-      var display = document.getElementById('amount-display');
-      var urlEl = document.getElementById('preview-url');
-      var errorEl = document.getElementById('amount-error');
+      var nameInput = document.getElementById('customer-name');
+      var emailInput = document.getElementById('customer-email');
+      var salesInput = document.getElementById('sales-person');
+      var amountInput = document.getElementById('amount-input');
+      var amountDisplay = document.getElementById('amount-display');
+      var amountError = document.getElementById('amount-error');
+      var btnGenerate = document.getElementById('btn-generate');
+      var resultBox = document.getElementById('result');
+      var resultUrl = document.getElementById('result-url');
+      var btnCopy = document.getElementById('btn-copy');
+      var btnPreview = document.getElementById('btn-preview');
       var toast = document.getElementById('toast');
 
-      function getAmount() { return parseInt(input.value) || 0; }
+      var savedSales = localStorage.getItem('sales-person');
+      if (savedSales) salesInput.value = savedSales;
 
       function formatAmount(amount) {
         if (amount >= 10000 && amount % 10000 === 0) return (amount / 10000) + '万円';
@@ -123,92 +169,183 @@
         return amount.toLocaleString() + '円';
       }
 
-      function validate() {
-        var amount = getAmount();
-        if (amount < 1000) { errorEl.textContent = '1,000円以上を入力してください'; errorEl.style.display = 'block'; return false; }
-        if (amount > 1200000) { errorEl.textContent = '120万円以下を入力してください'; errorEl.style.display = 'block'; return false; }
-        if (amount % 1000 !== 0) { errorEl.textContent = '1,000円単位で入力してください'; errorEl.style.display = 'block'; return false; }
-        errorEl.style.display = 'none';
+      function getAmount() { return parseInt(amountInput.value) || 0; }
+
+      function validateAmount() {
+        var a = getAmount();
+        if (a < 1000) { amountError.textContent = '1,000円以上を入力してください'; amountError.style.display = 'block'; return false; }
+        if (a > 1200000) { amountError.textContent = '120万円以下を入力してください'; amountError.style.display = 'block'; return false; }
+        if (a % 1000 !== 0) { amountError.textContent = '1,000円単位で入力してください'; amountError.style.display = 'block'; return false; }
+        amountError.style.display = 'none';
         return true;
       }
 
-      function getUrl() { return BASE + '/?amount=' + getAmount(); }
-
-      function update() {
-        var amount = getAmount();
-        if (validate()) {
-          display.textContent = formatAmount(amount);
-          urlEl.textContent = getUrl();
-        } else {
-          display.textContent = '---';
-          urlEl.textContent = '---';
-        }
+      function updateAmountDisplay() {
+        if (validateAmount()) amountDisplay.textContent = formatAmount(getAmount());
+        else amountDisplay.textContent = '---';
       }
 
       function showToast(msg) {
         toast.textContent = msg;
         toast.classList.add('show');
-        setTimeout(function() { toast.classList.remove('show'); }, 2000);
+        setTimeout(function() { toast.classList.remove('show'); }, 2200);
       }
 
-      function saveRecent(amount) {
-        var history = JSON.parse(localStorage.getItem('recent-links') || '[]');
-        history.unshift({ amount: amount, date: new Date().toLocaleString('ja-JP'), url: getUrl() });
-        if (history.length > 10) history = history.slice(0, 10);
-        localStorage.setItem('recent-links', JSON.stringify(history));
+      amountInput.addEventListener('input', updateAmountDisplay);
+      document.querySelectorAll('.quick-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          amountInput.value = btn.getAttribute('data-amount');
+          updateAmountDisplay();
+        });
+      });
+
+      btnGenerate.addEventListener('click', async function() {
+        var name = nameInput.value.trim();
+        var email = emailInput.value.trim();
+        var sales = salesInput.value.trim();
+        if (!name) { showToast('お客様のお名前を入れてください'); nameInput.focus(); return; }
+        if (!sales) { showToast('担当の営業マンを入れてください'); salesInput.focus(); return; }
+        if (!validateAmount()) return;
+
+        btnGenerate.disabled = true;
+        btnGenerate.textContent = '発行中…';
+
+        try {
+          var res = await fetch(ANALYSISTOOL_API + '/api/payment-links', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + authedHash,
+            },
+            body: JSON.stringify({
+              customer_name: name,
+              customer_email: email || undefined,
+              sales_person: sales,
+              amount: getAmount(),
+            }),
+          });
+          var data = await res.json();
+          if (!res.ok) {
+            showToast('発行失敗: ' + (data.error || res.status));
+            btnGenerate.disabled = false;
+            btnGenerate.textContent = 'この内容で決済リンクを発行する';
+            return;
+          }
+
+          localStorage.setItem('sales-person', sales);
+          resultUrl.textContent = data.url;
+          resultBox.style.display = 'block';
+          saveRecent({
+            token: data.token,
+            customer_name: name,
+            sales_person: sales,
+            amount: getAmount(),
+            url: data.url,
+            created_at: new Date().toISOString(),
+            status: 'pending',
+          });
+          showToast('リンクを発行しました');
+        } catch (e) {
+          showToast('通信エラー: ' + e.message);
+        } finally {
+          btnGenerate.disabled = false;
+          btnGenerate.textContent = 'この内容で決済リンクを発行する';
+        }
+      });
+
+      btnCopy.addEventListener('click', function() {
+        navigator.clipboard.writeText(resultUrl.textContent).then(function() {
+          showToast('コピーしました');
+        });
+      });
+
+      btnPreview.addEventListener('click', function() {
+        window.open(resultUrl.textContent, '_blank');
+      });
+
+      function saveRecent(item) {
+        var history = JSON.parse(localStorage.getItem('recent-payment-links') || '[]');
+        history.unshift(item);
+        if (history.length > 30) history = history.slice(0, 30);
+        localStorage.setItem('recent-payment-links', JSON.stringify(history));
         renderRecent();
       }
 
       function renderRecent() {
-        var history = JSON.parse(localStorage.getItem('recent-links') || '[]');
+        var history = JSON.parse(localStorage.getItem('recent-payment-links') || '[]');
         var card = document.getElementById('recent-card');
         var list = document.getElementById('recent-list');
         if (history.length === 0) { card.style.display = 'none'; return; }
         card.style.display = 'block';
         list.innerHTML = '';
         history.forEach(function(item) {
-          var amt = parseInt(item.amount);
-          if (isNaN(amt) || amt < 1000 || amt > 1200000) return;
           var li = document.createElement('li');
-          var span = document.createElement('span');
-          span.textContent = formatAmount(amt) + ' — ' + (item.date || '');
-          var link = document.createElement('a');
-          try { var parsed = new URL(item.url); } catch(e) { return; }
-          if (parsed.origin !== BASE) return;
-          link.href = parsed.href;
-          link.target = '_blank';
-          link.textContent = '開く';
-          li.appendChild(span);
-          li.appendChild(link);
+          var status = item.status || 'pending';
+          var badgeClass = status === 'paid' ? 'badge-paid' : status === 'failed' ? 'badge-failed' : 'badge-pending';
+          var badgeText = status === 'paid' ? '支払済' : status === 'failed' ? '失敗' : '未確認';
+          var date = item.created_at ? new Date(item.created_at).toLocaleString('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+          li.innerHTML =
+            '<div class="top">' +
+              '<span class="name">' + escapeHtml(item.customer_name || '?') + '</span>' +
+              '<span class="badge ' + badgeClass + '">' + badgeText + '</span>' +
+              '<span class="amount">' + formatAmount(item.amount || 0) + '</span>' +
+            '</div>' +
+            '<div class="meta">' +
+              '<span>担当: ' + escapeHtml(item.sales_person || '?') + '</span>' +
+              '<span>' + date + '</span>' +
+            '</div>' +
+            '<div class="actions">' +
+              '<a class="btn-mini" href="' + escapeAttr(item.url) + '" target="_blank">開く</a>' +
+              '<button class="btn-mini" data-copy="' + escapeAttr(item.url) + '">コピー</button>' +
+            '</div>';
           list.appendChild(li);
+        });
+        list.querySelectorAll('button[data-copy]').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            navigator.clipboard.writeText(btn.getAttribute('data-copy')).then(function() {
+              showToast('コピーしました');
+            });
+          });
         });
       }
 
-      input.addEventListener('input', update);
-
-      // クイックボタン
-      document.querySelectorAll('.quick-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          input.value = this.getAttribute('data-amount');
-          update();
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function(c) {
+          return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
         });
-      });
+      }
+      function escapeAttr(s) { return escapeHtml(s); }
 
-      document.getElementById('btn-copy').addEventListener('click', function() {
-        if (!validate()) return;
-        navigator.clipboard.writeText(getUrl()).then(function() {
-          showToast('リンクをコピーしました');
-          saveRecent(getAmount());
-        });
-      });
+      async function refreshRecentStatuses() {
+        var history = JSON.parse(localStorage.getItem('recent-payment-links') || '[]');
+        if (history.length === 0) return;
+        var changed = false;
+        for (var i = 0; i < history.length; i++) {
+          var item = history[i];
+          if (!item.token) continue;
+          if (item.status === 'paid' || item.status === 'failed' || item.status === 'refunded') continue;
+          try {
+            var res = await fetch(ANALYSISTOOL_API + '/api/payment-links?token=' + encodeURIComponent(item.token));
+            if (!res.ok) continue;
+            var data = await res.json();
+            if (data && data.status && data.status !== item.status) {
+              item.status = data.status;
+              changed = true;
+            }
+          } catch(e) {}
+        }
+        if (changed) {
+          localStorage.setItem('recent-payment-links', JSON.stringify(history));
+          renderRecent();
+          showToast('ステータスを更新しました');
+        }
+      }
 
-      document.getElementById('btn-open').addEventListener('click', function() {
-        if (!validate()) return;
-        window.open(getUrl(), '_blank');
-      });
+      document.getElementById('btn-refresh-recent').addEventListener('click', refreshRecentStatuses);
 
-      update();
+      updateAmountDisplay();
       renderRecent();
+      refreshRecentStatuses();
     })();
   </script>
 </body>

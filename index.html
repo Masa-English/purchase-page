@@ -290,53 +290,139 @@
   <script src="assets/js/slick.min.js"></script>
   <script>
     (function() {
+      var ANALYSISTOOL_API = 'https://analysis-roan-delta.vercel.app';
       var params = new URLSearchParams(window.location.search);
+      var token = params.get('token');
       var fixedAmount = parseInt(params.get('amount'));
+      var result = params.get('result');
 
-      // URLに?amount=がある場合 → 顧客モード（金額固定）
-      if (fixedAmount && fixedAmount >= 1000 && fixedAmount <= 1200000 && fixedAmount % 1000 === 0) {
-        // セレクターを全て非表示にし、該当金額のボタンだけ表示
+      function formatAmount(amount) {
+        if (amount >= 10000 && amount % 10000 === 0) return (amount / 10000) + '万円';
+        if (amount >= 10000) return Math.floor(amount / 10000) + '万' + ((amount % 10000).toLocaleString()) + '円';
+        return amount.toLocaleString() + '円';
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function(c) {
+          return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+        });
+      }
+
+      function showResultBanner(kind, html) {
+        var existing = document.getElementById('payjp-result-banner');
+        if (existing) existing.remove();
+        var msg = document.createElement('div');
+        msg.id = 'payjp-result-banner';
+        var bg = kind === 'success' ? '#44b5a1' : kind === 'cancel' ? '#f7b12b' : '#f97d7d';
+        msg.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:1.4em 1em;background:' + bg + ';color:#fff;text-align:center;font-size:1.3rem;font-weight:700;z-index:9999;line-height:1.6;box-shadow:0 2px 12px rgba(0,0,0,.15);';
+        msg.innerHTML = html;
+        document.body.prepend(msg);
+        document.body.style.paddingTop = msg.offsetHeight + 'px';
+      }
+
+      function renderTokenPurchase(linkInfo) {
         var purchaseRow = document.querySelector('.purchase-row');
-        if (purchaseRow) {
-          var man = fixedAmount / 10000;
-          purchaseRow.innerHTML = '<th>お支払い金額</th>' +
-            '<td colspan="4" style="text-align:center;padding:2em 1em;">' +
-            '<p style="font-size:2.4rem;font-weight:900;margin-bottom:.8em;">' + man + '万円<span style="font-size:1.2rem;font-weight:400;">（税込）</span></p>' +
-            '<a href="#" class="purchase-btn-fixed" style="display:inline-block;color:#fff;font-size:1.8rem;font-weight:700;letter-spacing:.1em;padding:1.2em 3em;border-radius:.8rem;text-decoration:none;background:#44b5a1;transition:opacity 0.3s,transform 0.2s;">購入する</a>' +
-            '</td>';
-        }
+        if (!purchaseRow) return;
+        var man = formatAmount(linkInfo.amount);
+        var customerName = linkInfo.customer_name || 'お客様';
+        var alreadyPaid = linkInfo.status === 'paid';
+        var html = '<th>お支払い情報</th>' +
+          '<td colspan="4" style="text-align:left;padding:2em 1.5em;">' +
+            '<div style="background:#fafbfc;border:1px solid #e5e7eb;border-radius:8px;padding:1.2em 1.4em;margin-bottom:1.2em;">' +
+              '<p style="font-size:1.1rem;color:#666;margin-bottom:.4em;">' + escapeHtml(customerName) + '様 専用ページ</p>' +
+              '<p style="font-size:2.2rem;font-weight:900;color:#0f172a;">' + man + '<span style="font-size:1.2rem;font-weight:400;color:#666;margin-left:.4em;">（税込）</span></p>' +
+            '</div>' +
+            (alreadyPaid
+              ? '<div style="background:#44b5a1;color:#fff;text-align:center;padding:1.2em;border-radius:8px;font-size:1.2rem;font-weight:700;">✅ このリンクは既にお支払い済みです<br><span style="font-size:.95rem;font-weight:400;">担当より受講開始のご連絡をいたします</span></div>'
+              : '<div style="text-align:center;">' +
+                '<a href="#" class="purchase-btn-fixed" style="display:inline-block;color:#fff;font-size:1.6rem;font-weight:700;letter-spacing:.05em;padding:1.1em 2.8em;border-radius:.8rem;text-decoration:none;background:#44b5a1;transition:opacity 0.3s,transform 0.2s;">購入手続きへ進む</a>' +
+                '<div style="margin-top:1.2em;padding:1em 1.2em;background:#fff8e1;border:1px solid #ffd54f;border-radius:8px;font-size:.9rem;color:#5d4500;text-align:left;line-height:1.7;">' +
+                  '<strong>⚠️ ご決済の手順とご注意</strong><br>' +
+                  '① 上のボタンから決済画面へ進みます<br>' +
+                  '② カード情報を入力 → 決済を実行<br>' +
+                  '③ <strong>カード会社の本人認証（3Dセキュア）</strong>画面に切り替わります<br>' +
+                  '　　 → SMSや銀行アプリに届いた認証コードを必ず入力してください<br>' +
+                  '④ 認証完了で決済完了。完了画面が表示されます<br><br>' +
+                  '※ ¥30万以上のお支払いは本人認証が必須です。途中で画面を閉じると決済が完了しないので、最後まで進めてください。' +
+                '</div>' +
+              '</div>') +
+          '</td>';
+        purchaseRow.innerHTML = html;
+
+        if (alreadyPaid) return;
 
         var fixedBtn = document.querySelector('.purchase-btn-fixed');
-        if (fixedBtn) {
-          fixedBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            this.textContent = '処理中...';
-            this.style.pointerEvents = 'none';
-            var self = this;
-            fetch('/api/checkout', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ amount: fixedAmount })
-            })
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-              if (data.url) {
-                window.location.href = data.url;
-              } else {
-                alert('決済ページの作成に失敗しました。もう一度お試しください。');
-                self.textContent = '購入する';
-                self.style.pointerEvents = '';
-              }
-            })
-            .catch(function() {
-              alert('通信エラーが発生しました。もう一度お試しください。');
+        if (!fixedBtn) return;
+        fixedBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          this.textContent = '読み込み中（最大10秒ほどかかります）';
+          this.style.pointerEvents = 'none';
+          var self = this;
+          fetch('/api/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: token }),
+          })
+          .then(function(res) { return res.json(); })
+          .then(function(data) {
+            if (data.url) {
+              window.location.href = data.url;
+            } else {
+              alert((data.error || '決済ページの作成に失敗しました') + '\nもう一度お試しください。');
+              self.textContent = '購入手続きへ進む';
+              self.style.pointerEvents = '';
+            }
+          })
+          .catch(function() {
+            alert('通信エラーが発生しました。もう一度お試しください。');
+            self.textContent = '購入手続きへ進む';
+            self.style.pointerEvents = '';
+          });
+        });
+      }
+
+      function renderLegacyAmountPurchase(amount) {
+        var purchaseRow = document.querySelector('.purchase-row');
+        if (!purchaseRow) return;
+        var man = formatAmount(amount);
+        purchaseRow.innerHTML = '<th>お支払い金額</th>' +
+          '<td colspan="4" style="text-align:center;padding:2em 1em;">' +
+          '<p style="font-size:2.4rem;font-weight:900;margin-bottom:.8em;">' + man + '<span style="font-size:1.2rem;font-weight:400;">（税込）</span></p>' +
+          '<a href="#" class="purchase-btn-fixed" style="display:inline-block;color:#fff;font-size:1.8rem;font-weight:700;letter-spacing:.1em;padding:1.2em 3em;border-radius:.8rem;text-decoration:none;background:#44b5a1;transition:opacity 0.3s,transform 0.2s;">購入する</a>' +
+          '<p style="margin-top:1em;font-size:.85rem;color:#888;">※ 決済時にカード会社の本人認証（3Dセキュア）が必要です</p>' +
+          '</td>';
+
+        var fixedBtn = document.querySelector('.purchase-btn-fixed');
+        if (!fixedBtn) return;
+        fixedBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          this.textContent = '読み込み中（最大10秒ほどかかります）';
+          this.style.pointerEvents = 'none';
+          var self = this;
+          fetch('/api/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: amount }),
+          })
+          .then(function(res) { return res.json(); })
+          .then(function(data) {
+            if (data.url) {
+              window.location.href = data.url;
+            } else {
+              alert((data.error || '決済ページの作成に失敗しました') + '\nもう一度お試しください。');
               self.textContent = '購入する';
               self.style.pointerEvents = '';
-            });
+            }
+          })
+          .catch(function() {
+            alert('通信エラーが発生しました。もう一度お試しください。');
+            self.textContent = '購入する';
+            self.style.pointerEvents = '';
           });
-        }
-      } else {
-        // ?amount=なし → 購入ボタンを非表示（営業マンからリンクをもらう必要がある）
+        });
+      }
+
+      function renderNoLink() {
         var purchaseRow = document.querySelector('.purchase-row');
         if (purchaseRow) {
           purchaseRow.innerHTML = '<th></th>' +
@@ -346,18 +432,50 @@
         }
       }
 
-      // 決済完了/キャンセル時のメッセージ表示
-      var result = params.get('result');
-      if (result === 'success') {
-        var msg = document.createElement('div');
-        msg.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:1.5em;background:#44b5a1;color:#fff;text-align:center;font-size:1.6rem;font-weight:700;z-index:9999;';
-        msg.textContent = 'お支払いが完了しました。ありがとうございます。';
-        document.body.prepend(msg);
-      } else if (result === 'cancel') {
-        var msg = document.createElement('div');
-        msg.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:1.5em;background:#f97d7d;color:#fff;text-align:center;font-size:1.6rem;font-weight:700;z-index:9999;';
-        msg.textContent = 'お支払いがキャンセルされました。';
-        document.body.prepend(msg);
+      // success/cancel banners (always run before page rendering decisions if applicable)
+      function showResultMessages(linkInfo) {
+        var name = (linkInfo && linkInfo.customer_name) ? linkInfo.customer_name + '様、' : '';
+        if (result === 'success') {
+          showResultBanner('success',
+            '🎉 お支払いが完了しました<br>' +
+            '<span style="font-size:.95rem;font-weight:400;">' + escapeHtml(name) + 'ご決済ありがとうございます。担当者より24時間以内にご連絡いたします。</span>'
+          );
+        } else if (result === 'cancel') {
+          showResultBanner('cancel',
+            'お支払いがキャンセルされました<br>' +
+            '<span style="font-size:.95rem;font-weight:400;">もう一度購入される場合は下のボタンからお進みください。</span>'
+          );
+        } else if (result === 'fail') {
+          showResultBanner('fail',
+            'お支払いが完了しませんでした<br>' +
+            '<span style="font-size:.95rem;font-weight:400;">本人認証（3Dセキュア）が完了していない可能性があります。担当者にご連絡ください。</span>'
+          );
+        }
+      }
+
+      // Token mode (preferred new flow)
+      if (token && /^[a-f0-9-]{36}$/i.test(token)) {
+        fetch(ANALYSISTOOL_API + '/api/payment-links?token=' + encodeURIComponent(token))
+          .then(function(res) { return res.json().then(function(data){ return { ok: res.ok, data: data }; }); })
+          .then(function(r) {
+            if (!r.ok) {
+              renderNoLink();
+              showResultBanner('fail', 'リンクが無効、または期限切れです。担当者にご連絡ください。');
+              return;
+            }
+            renderTokenPurchase(r.data);
+            showResultMessages(r.data);
+          })
+          .catch(function() {
+            renderNoLink();
+            showResultBanner('fail', '通信エラー。担当者にご連絡ください。');
+          });
+      } else if (fixedAmount && fixedAmount >= 1000 && fixedAmount <= 1200000 && fixedAmount % 1000 === 0) {
+        renderLegacyAmountPurchase(fixedAmount);
+        showResultMessages(null);
+      } else {
+        renderNoLink();
+        showResultMessages(null);
       }
     })();
   </script>
