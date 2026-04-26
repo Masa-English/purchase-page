@@ -157,6 +157,11 @@ export default async function handler(req, res) {
       mode: 'payment',
       success_url: `${BASE_URL}/?result=success&token=${encodeURIComponent(token)}`,
       cancel_url: `${BASE_URL}/?result=cancel&token=${encodeURIComponent(token)}`,
+      metadata: {
+        token,
+        customer_name: customerName || '',
+        sales_person: salesPerson || '',
+      },
       payment_intent_data: {
         description,
         metadata: {
