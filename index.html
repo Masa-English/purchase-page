@@ -337,6 +337,10 @@
                   '<label style="display:block;font-size:.95rem;font-weight:700;color:#0f172a;margin-bottom:.5em;">お名前（フルネーム） <span style="color:#dc2626;">*</span></label>' +
                   '<input type="text" id="cust-name-input" placeholder="例：山田太郎" value="' + escapeHtml(prefilledName) + '" style="width:100%;padding:.8em 1em;font-size:1rem;border:1px solid #cbd5e1;border-radius:6px;font-family:inherit;box-sizing:border-box;" />' +
                 '</div>' +
+                '<div style="background:#f8f9fb;border:1px solid #e5e7eb;border-radius:8px;padding:1.2em 1.4em;margin-bottom:1.2em;">' +
+                  '<label style="display:block;font-size:.95rem;font-weight:700;color:#0f172a;margin-bottom:.5em;">メールアドレス <span style="color:#dc2626;">*</span></label>' +
+                  '<input type="email" id="cust-email-input" placeholder="例：example@email.com" value="' + escapeHtml(linkInfo.customer_email || '') + '" style="width:100%;padding:.8em 1em;font-size:1rem;border:1px solid #cbd5e1;border-radius:6px;font-family:inherit;box-sizing:border-box;" />' +
+                '</div>' +
                 '<div style="margin-bottom:1.2em;padding:1.2em 1.4em;background:#fff3cd;border:2px solid #f59e0b;border-radius:10px;font-size:.95rem;color:#7c4a00;line-height:1.8;">' +
                   '<div style="font-size:1.05rem;font-weight:900;margin-bottom:.6em;">📱 決済前に必ずお読みください</div>' +
                   '① 「購入手続きへ進む」を押すと<strong>カード情報入力画面</strong>に移動します<br>' +
@@ -382,9 +386,16 @@
           e.preventDefault();
           var nameInput = document.getElementById('cust-name-input');
           var nameVal = nameInput ? nameInput.value.trim() : '';
+          var emailInput = document.getElementById('cust-email-input');
+          var emailVal = emailInput ? emailInput.value.trim() : '';
           if (nameVal.length < 2) {
             alert('お名前を入力してください。');
             if (nameInput) nameInput.focus();
+            return;
+          }
+          if (!emailVal || emailVal.indexOf('@') === -1) {
+            alert('メールアドレスを入力してください。');
+            if (emailInput) emailInput.focus();
             return;
           }
           this.textContent = '読み込み中（最大10秒ほどかかります）';
@@ -393,7 +404,7 @@
           fetch('/api/checkout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: token, customer_name: nameVal }),
+            body: JSON.stringify({ token: token, customer_name: nameVal, customer_email: emailVal }),
           })
           .then(function(res) { return res.json(); })
           .then(function(data) {
