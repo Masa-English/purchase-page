@@ -67,6 +67,89 @@ module.exports = async (req, res) => {
 
   console.log(`[payjp-webhook] type=${eventType} id=${objId} token=${token} amount=${amount}`);
 
+  // payment_flow.created: 課金前にmetadata/description/customer_id を payment_flow に注入
+  // succeeded後はupdate不可なのでcreated直後に確実にやる
+  if (eventType === 'payment_flow.created') {
+    if (!objId) return res.status(200).json({ ok: true, ignored: 'no id' });
+    try {
+      const secretKey0 = (process.env.PAYJP_SECRET_KEY || '').replace(/\\n$/, '').trim();
+      const auth0 = 'Basic ' + Buffer.from(secretKey0 + ':').toString('base64');
+      // event payload に return_url 無い場合に備え、改めて payment_flow 取得
+      if (!token) {
+        try {
+          const pfRes = await fetch(`https://api.pay.jp/v2/payment_flows/${objId}`, { headers: { Authorization: auth0 } });
+          if (pfRes.ok) {
+            const pfObj = await pfRes.json();
+            if (pfObj.return_url) {
+              try {
+                const u = new URL(pfObj.return_url);
+                token = u.searchParams.get('token') || '';
+              } catch (e) {}
+            }
+          }
+        } catch (e) {
+          console.error('[payjp-webhook] payment_flow fetch error:', e);
+        }
+      }
+      if (!token) return res.status(200).json({ ok: true, ignored: 'no token even after fetch' });
+      const sql = db();
+      const linkRows = await sql`SELECT customer_name, customer_email, sales_person FROM payment_links WHERE token = ${token} LIMIT 1`;
+      if (linkRows.length === 0) return res.status(200).json({ ok: true, ignored: 'token not found' });
+      const link = linkRows[0];
+
+      const secretKey = (process.env.PAYJP_SECRET_KEY || '').replace(/\\n$/, '').trim();
+      const auth = 'Basic ' + Buffer.from(secretKey + ':').toString('base64');
+
+      // v1 customer 作成（ダッシュボード顧客一覧表示用）
+      let customerId = '';
+      if (link.customer_email) {
+        try {
+          const cRes = await fetch('https://api.pay.jp/v1/customers', {
+            method: 'POST',
+            headers: { Authorization: auth, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              email: link.customer_email,
+              description: `${link.customer_name || ''}様 / 営業: ${link.sales_person || ''}`,
+              'metadata[name]': link.customer_name || '',
+              'metadata[token]': token,
+              'metadata[sales_person]': link.sales_person || '',
+            }).toString(),
+          });
+          const cData = await cRes.json();
+          if (cData && cData.id) customerId = cData.id;
+          else console.warn('[payjp-webhook] v1 customer create returned no id:', cData);
+        } catch (e) {
+          console.error('[payjp-webhook] v1 customer create error:', e);
+        }
+      }
+
+      // payment_flow update (metadata + description + customer_id)
+      const updatePayload = {
+        description: `${link.customer_name || ''}様 / 営業: ${link.sales_person || ''}`,
+        metadata: {
+          name: link.customer_name || '',
+          email: link.customer_email || '',
+          sales_person: link.sales_person || '',
+          token,
+        },
+      };
+      if (customerId) updatePayload.customer_id = customerId;
+
+      const upRes = await fetch(`https://api.pay.jp/v2/payment_flows/${objId}`, {
+        method: 'POST',
+        headers: { Authorization: auth, 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatePayload),
+      });
+      if (!upRes.ok) {
+        const errBody = await upRes.text();
+        console.error('[payjp-webhook] payment_flow update failed:', upRes.status, errBody);
+      }
+    } catch (e) {
+      console.error('[payjp-webhook] payment_flow.created handler error:', e);
+    }
+    return res.status(200).json({ ok: true, status: 'metadata_set' });
+  }
+
   // payment_flow.* イベント処理（pay.jp v2 checkout）
   if (eventType === 'payment_flow.succeeded') {
     if (!token) {

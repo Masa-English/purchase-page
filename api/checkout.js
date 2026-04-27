@@ -153,35 +153,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to create price' });
     }
 
-    // pay.jp 顧客作成（ダッシュボード顧客一覧で名前/メール表示用）
-    let payjpCustomerId = '';
-    try {
-      const customerRes = await fetch('https://api.pay.jp/v1/customers', {
-        method: 'POST',
-        headers: {
-          Authorization: getAuthHeaders().Authorization,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          email: customerEmail,
-          description: `${customerName}様 / 営業: ${salesPerson || ''}`,
-          'metadata[name]': customerName,
-          'metadata[token]': token,
-          'metadata[sales_person]': salesPerson || '',
-        }).toString(),
-      });
-      const customerData = await customerRes.json();
-      if (customerData && customerData.id) {
-        payjpCustomerId = customerData.id;
-      } else {
-        console.warn('pay.jp customer create returned no id:', customerData);
-      }
-    } catch (e) {
-      console.error('pay.jp customer create failed:', e);
-    }
-
-    const description = `${customerName}様 / 営業: ${salesPerson}`;
-
     const sessionPayload = {
       line_items: [{ price_id: priceId, quantity: 1 }],
       mode: 'payment',
@@ -192,22 +163,8 @@ export default async function handler(req, res) {
         customer_name: customerName || '',
         customer_email: customerEmail || '',
         sales_person: salesPerson || '',
-        payjp_customer_id: payjpCustomerId || '',
-      },
-      payment_intent_data: {
-        description,
-        metadata: {
-          token,
-          customer_name: customerName || '',
-          customer_email: customerEmail || '',
-          sales_person: salesPerson || '',
-          payjp_customer_id: payjpCustomerId || '',
-        },
       },
     };
-    if (payjpCustomerId) {
-      sessionPayload.customer = payjpCustomerId;
-    }
     if (customerEmail) {
       sessionPayload.customer_email = customerEmail;
     }
