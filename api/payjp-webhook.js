@@ -51,10 +51,11 @@ module.exports = async (req, res) => {
 
   const event = req.body || {};
   const eventType = event.type || '';
-  const obj = (event.data && event.data.object) || {};
+  // pay.jp event payload: event.data に直接objectが展開される（event.data.objectではない）
+  const obj = (event.data && (event.data.object && typeof event.data.object === 'object' ? event.data.object : event.data)) || {};
   const objId = obj.id || '';
   const amount = obj.amount || 0;
-  const metadata = obj.metadata || {};
+  const metadata = obj.metadata || obj.meta_data || {};
 
   // token: metadata優先、なければreturn_urlから取得（pay.jp v2 payment_flow対応）
   let token = metadata.token || metadata.payment_token || '';
