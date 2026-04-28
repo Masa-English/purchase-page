@@ -158,150 +158,70 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true, ignored: 'no token' });
     }
     const sql = db();
-    const linkRows = await sql`SELECT token, customer_name, sales_person, amount, consultation_id, status FROM payment_links WHERE token = ${token} LIMIT 1`;
+    const linkRows = await sql`SELECT token, customer_name, sales_person, amount, consultation_id, status, payjp_charge_id FROM payment_links WHERE token = ${token} LIMIT 1`;
     if (linkRows.length === 0) return res.status(200).json({ ok: true, ignored: 'token not found' });
     const link = linkRows[0];
-    if (link.status !== 'paid') {
-      await sql`UPDATE payment_links SET status = 'paid', payjp_charge_id = ${objId}, paid_at = NOW() WHERE token = ${token}`;
-      if (link.consultation_id) {
-        await sql`UPDATE consultations SET payjp_status='paid', payjp_amount=${amount}, payjp_token=${token}, payjp_charge_id=${objId}, payjp_paid_at=NOW() WHERE id=${link.consultation_id}`;
-      } else {
-        const matches = await sql`SELECT id FROM consultations WHERE line_name = ${link.customer_name} OR line_name LIKE ${link.customer_name + '%'} ORDER BY apo_date DESC NULLS LAST LIMIT 1`;
-        if (matches.length > 0) {
-          await sql`UPDATE consultations SET payjp_status='paid', payjp_amount=${amount}, payjp_token=${token}, payjp_charge_id=${objId}, payjp_paid_at=NOW() WHERE id=${matches[0].id}`;
-          await sql`UPDATE payment_links SET consultation_id=${matches[0].id} WHERE token=${token}`;
-        }
-      }
-      await notifySlack(`✅ 決済完了（v2）\nお客様: ${link.customer_name}様\n金額: ${fmtAmount(amount)}\n${link.sales_person ? `担当: ${link.sales_person}\n` : ''}PaymentFlow: ${objId}`);
+
+    // 既にpaidかつ別のpayment_flow ID = 重複決済
+    if (link.status === 'paid' && link.payjp_charge_id && link.payjp_charge_id !== objId) {
+      await notifySlack(
+        `🚨 重複決済を検知（v2）\n` +
+        `お客様: ${link.customer_name}様\n` +
+        `金額: ${fmtAmount(amount)}\n` +
+        (link.sales_person ? `担当: ${link.sales_person}\n` : '') +
+        `既存PaymentFlow: ${link.payjp_charge_id}\n` +
+        `今回PaymentFlow: ${objId}\n` +
+        `→ pay.jpダッシュで2回目を返金してください`
+      );
+      return res.status(200).json({ ok: true, status: 'duplicate_charge' });
     }
+
+    // 同じpayment_flowの再配信は無視
+    if (link.status === 'paid' && link.payjp_charge_id === objId) {
+      return res.status(200).json({ ok: true, status: 'already_paid_same_flow' });
+    }
+
+    await sql`UPDATE payment_links SET status = 'paid', payjp_charge_id = ${objId}, paid_at = NOW() WHERE token = ${token}`;
+    if (link.consultation_id) {
+      await sql`UPDATE consultations SET payjp_status='paid', payjp_amount=${amount}, payjp_token=${token}, payjp_charge_id=${objId}, payjp_paid_at=NOW() WHERE id=${link.consultation_id}`;
+    } else {
+      const matches = await sql`SELECT id FROM consultations WHERE line_name = ${link.customer_name} OR line_name LIKE ${link.customer_name + '%'} ORDER BY apo_date DESC NULLS LAST LIMIT 1`;
+      if (matches.length > 0) {
+        await sql`UPDATE consultations SET payjp_status='paid', payjp_amount=${amount}, payjp_token=${token}, payjp_charge_id=${objId}, payjp_paid_at=NOW() WHERE id=${matches[0].id}`;
+        await sql`UPDATE payment_links SET consultation_id=${matches[0].id} WHERE token=${token}`;
+      }
+    }
+    await notifySlack(`✅ 決済完了（v2）\nお客様: ${link.customer_name}様\n金額: ${fmtAmount(amount)}\n${link.sales_person ? `担当: ${link.sales_person}\n` : ''}PaymentFlow: ${objId}`);
     return res.status(200).json({ ok: true, status: 'paid' });
   }
 
   if (eventType === 'payment_flow.payment_failed') {
     if (!token) return res.status(200).json({ ok: true, ignored: 'no token' });
     const sql = db();
-    const linkRows = await sql`SELECT token, customer_name, sales_person, consultation_id, status FROM payment_links WHERE token = ${token} LIMIT 1`;
+    const linkRows = await sql`SELECT token, customer_name, sales_person, consultation_id, status, payjp_charge_id FROM payment_links WHERE token = ${token} LIMIT 1`;
     if (linkRows.length === 0) return res.status(200).json({ ok: true, ignored: 'token not found' });
     const link = linkRows[0];
     const reason = obj.last_payment_error?.message || '3DS認証失敗';
+
+    // 既paidは絶対に上書きしない（過去の事故防止）
+    if (link.status === 'paid') {
+      console.warn('[payjp-webhook] payment_failed received for already-paid link, skipping DB update', { token, objId, reason });
+      await notifySlack(
+        `ℹ️ 既paidリンクで失敗イベント受信（DB更新なし）\n` +
+        `お客様: ${link.customer_name}様\n` +
+        `今回PaymentFlow: ${objId}\n` +
+        `理由: ${reason}\n` +
+        `→ 通常はお客様が念のため再決済を試した結果。要対応はなし`
+      );
+      return res.status(200).json({ ok: true, status: 'already_paid_skip_failure' });
+    }
+
     await sql`UPDATE payment_links SET status='failed', payjp_charge_id=${objId}, failure_reason=${reason}, failed_at=NOW() WHERE token=${token}`;
     if (link.consultation_id) {
       await sql`UPDATE consultations SET payjp_status='failed', payjp_token=${token}, payjp_charge_id=${objId} WHERE id=${link.consultation_id}`;
     }
     await notifySlack(`⚠️ 決済失敗（v2）\nお客様: ${link.customer_name}様\n金額: ${fmtAmount(amount)}\n${link.sales_person ? `担当: ${link.sales_person}\n` : ''}理由: ${reason}\n→ 再決済リンク発行＋3DS認証完了を案内`);
     return res.status(200).json({ ok: true, status: 'failed' });
-  }
-
-  if (!token) {
-    console.warn('[payjp-webhook] no token in metadata, skip', { eventType, objId });
-    return res.status(200).json({ ok: true, ignored: 'no token' });
-  }
-
-  const sql = db();
-
-  const linkRows = await sql`
-    SELECT token, customer_name, customer_email, sales_person, amount, consultation_id, status
-    FROM payment_links
-    WHERE token = ${token}
-    LIMIT 1
-  `;
-
-  if (linkRows.length === 0) {
-    console.warn('[payjp-webhook] token not found', token);
-    return res.status(200).json({ ok: true, ignored: 'token not found' });
-  }
-  const link = linkRows[0];
-
-  if (eventType === 'charge.succeeded' || (eventType === 'charge.updated' && obj.paid && obj.captured)) {
-    if (link.status === 'paid') {
-      console.log('[payjp-webhook] already paid, skip notify');
-      return res.status(200).json({ ok: true, ignored: 'already paid' });
-    }
-
-    await sql`
-      UPDATE payment_links
-      SET status = 'paid', payjp_charge_id = ${chargeId}, paid_at = NOW()
-      WHERE token = ${token}
-    `;
-
-    if (link.consultation_id) {
-      await sql`
-        UPDATE consultations
-        SET payjp_status = 'paid',
-            payjp_amount = ${amount},
-            payjp_token = ${token},
-            payjp_charge_id = ${chargeId},
-            payjp_paid_at = NOW()
-        WHERE id = ${link.consultation_id}
-      `;
-    } else {
-      const matches = await sql`
-        SELECT id FROM consultations
-        WHERE line_name = ${link.customer_name}
-           OR line_name LIKE ${link.customer_name + '%'}
-           OR line_name LIKE ${'%' + link.customer_name + '%'}
-        ORDER BY apo_date DESC NULLS LAST
-        LIMIT 1
-      `;
-      if (matches.length > 0) {
-        await sql`
-          UPDATE consultations
-          SET payjp_status = 'paid',
-              payjp_amount = ${amount},
-              payjp_token = ${token},
-              payjp_charge_id = ${chargeId},
-              payjp_paid_at = NOW()
-          WHERE id = ${matches[0].id}
-        `;
-        await sql`UPDATE payment_links SET consultation_id = ${matches[0].id} WHERE token = ${token}`;
-      }
-    }
-
-    await notifySlack(
-      `✅ 決済完了\n` +
-        `お客様: ${link.customer_name}様\n` +
-        `金額: ${fmtAmount(amount)}\n` +
-        (link.sales_person ? `担当: ${link.sales_person}\n` : '') +
-        `Charge ID: ${chargeId}`
-    );
-    return res.status(200).json({ ok: true, status: 'paid' });
-  }
-
-  if (eventType === 'charge.failed') {
-    const reason = obj.failure_message || obj.failure_code || '不明';
-    await sql`
-      UPDATE payment_links
-      SET status = 'failed', payjp_charge_id = ${chargeId}, failure_reason = ${reason}, failed_at = NOW()
-      WHERE token = ${token}
-    `;
-    if (link.consultation_id) {
-      await sql`
-        UPDATE consultations
-        SET payjp_status = 'failed',
-            payjp_amount = ${amount},
-            payjp_token = ${token},
-            payjp_charge_id = ${chargeId}
-        WHERE id = ${link.consultation_id}
-      `;
-    }
-    await notifySlack(
-      `⚠️ 決済失敗\n` +
-        `お客様: ${link.customer_name}様\n` +
-        `金額: ${fmtAmount(amount)}\n` +
-        (link.sales_person ? `担当: ${link.sales_person}\n` : '') +
-        `理由: ${reason}\n` +
-        `→ ${link.sales_person || '営業担当'}は再決済リンク発行＋顧客に3DS認証完了をご案内ください`
-    );
-    return res.status(200).json({ ok: true, status: 'failed' });
-  }
-
-  if (eventType === 'charge.refunded') {
-    await sql`UPDATE payment_links SET status = 'refunded' WHERE token = ${token}`;
-    if (link.consultation_id) {
-      await sql`UPDATE consultations SET payjp_status = 'refunded' WHERE id = ${link.consultation_id}`;
-    }
-    await notifySlack(`↩️ 返金処理: ${link.customer_name}様 ${fmtAmount(amount)} (${chargeId})`);
-    return res.status(200).json({ ok: true, status: 'refunded' });
   }
 
   console.log(`[payjp-webhook] unhandled event type: ${eventType}`);
