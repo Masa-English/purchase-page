@@ -224,6 +224,32 @@ module.exports = async (req, res) => {
     return res.status(200).json({ ok: true, status: 'failed' });
   }
 
+  // payment_refund.completed: pay.jpダッシュで返金されたらDBに反映
+  if (eventType === 'payment_refund.completed') {
+    const pfwId = obj.payment_flow_id;
+    if (!pfwId) return res.status(200).json({ ok: true, ignored: 'no payment_flow_id' });
+    const sql = db();
+    const linkRows = await sql`SELECT token, customer_name, sales_person, consultation_id, status FROM payment_links WHERE payjp_charge_id = ${pfwId} LIMIT 1`;
+    if (linkRows.length === 0) {
+      await notifySlack(`↩️ pay.jp返金完了（DB紐付けなし）\nPaymentFlow: ${pfwId}\n金額: ${fmtAmount(obj.amount)}\n理由: ${obj.reason || '-'}`);
+      return res.status(200).json({ ok: true, ignored: 'pfw not in DB' });
+    }
+    const link = linkRows[0];
+    await sql`UPDATE payment_links SET status='refunded' WHERE token=${link.token}`;
+    if (link.consultation_id) {
+      await sql`UPDATE consultations SET payjp_status='refunded' WHERE id=${link.consultation_id}`;
+    }
+    await notifySlack(
+      `↩️ 返金処理（v2）\n` +
+      `お客様: ${link.customer_name}様\n` +
+      `金額: ${fmtAmount(obj.amount)}\n` +
+      (link.sales_person ? `担当: ${link.sales_person}\n` : '') +
+      `理由: ${obj.reason || '-'}\n` +
+      `PaymentFlow: ${pfwId}`
+    );
+    return res.status(200).json({ ok: true, status: 'refunded' });
+  }
+
   console.log(`[payjp-webhook] unhandled event type: ${eventType}`);
   return res.status(200).json({ ok: true, ignored: eventType });
 };
