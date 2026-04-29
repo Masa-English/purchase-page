@@ -129,6 +129,9 @@ export default async function handler(req, res) {
   if (link.status === 'paid') {
     return res.status(400).json({ error: 'このリンクは既にお支払い済みです。' });
   }
+  if (link.status === 'refunded') {
+    return res.status(400).json({ error: 'このリンクは返金処理済みです。営業担当者に新しいリンクの発行をご依頼ください。' });
+  }
 
   const amount = link.amount;
   const customerName = inputCustomerName;
